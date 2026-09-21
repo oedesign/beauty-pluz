@@ -446,7 +446,7 @@ p {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-color: rgba(251, 243, 236, 0.92);
+  background-color: white;
   backdrop-filter: blur(8px);
 }
 
@@ -575,7 +575,7 @@ p {
 }
 
 .nav-overlay.is-open {
-  opacity: 1;
+  /* opacity: 1; */
   pointer-events: auto;
 }
 
@@ -1074,8 +1074,8 @@ main {
 }
 
 .btn--rose {
-  background: var(--gradient-rose-gold);
-  color: var(--clr-white);
+  background: white;
+  color: black;
   box-shadow: 0 10px 24px rgba(183, 110, 121, 0.28);
 }
 
@@ -1425,7 +1425,7 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, var(--clr-ivory-deep) 0%, var(--clr-blush) 140%);
+  background: transparent;
 }
 
 .product-card__image--serum { background: linear-gradient(160deg, var(--clr-ivory-deep) 0%, var(--clr-rose-gold-light) 140%); }
@@ -3295,7 +3295,7 @@ main {
   background-repeat: no-repeat;
 }
 
-.hero-carousel__scrim {
+/* .hero-carousel__scrim {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -3306,12 +3306,12 @@ main {
     rgba(38, 36, 32, 0.18) 62%,
     rgba(38, 36, 32, 0.05) 100%
   );
-}
+} */
 
 /* Right-aligned slides put their text panel on the opposite side, so
    the scrim must mirror too — otherwise the text would sit over the
    gradient's transparent end instead of its dark, high-contrast end. */
-.hero-carousel__slide--align-right .hero-carousel__scrim {
+/* .hero-carousel__slide--align-right .hero-carousel__scrim {
   background: linear-gradient(
     260deg,
     rgba(38, 36, 32, 0.78) 0%,
@@ -3319,7 +3319,7 @@ main {
     rgba(38, 36, 32, 0.18) 62%,
     rgba(38, 36, 32, 0.05) 100%
   );
-}
+} */
 
 .hero-carousel__content {
   position: relative;
@@ -3449,8 +3449,9 @@ main {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fit;
   transition: transform var(--duration-slow) var(--ease-out);
+  padding: 40px;
 }
 
 .product-card:hover .product-card__image,
@@ -3504,7 +3505,7 @@ main {
 .product-detail__media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* object-fit: cover; */
 }
 
 .product-detail__content {
