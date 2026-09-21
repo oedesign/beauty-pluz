@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beauty Pluz — Premium Skincare</title>
+  <meta name="description" content="Beauty Pluz is a premium skincare brand rooted in botanical science — considered formulas for visible results." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css?v=20260713" />
+  <link rel="stylesheet" href="css/responsive.css?v=20260713" />
+  <link rel="stylesheet" href="css/animations.css?v=20260713" />
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="announcement-bar" id="announcement-bar">
+    <div class="container announcement-bar__inner">
+      <p class="announcement-bar__text">Free shipping on orders over $75 · New: The Ritual Edit is here</p>
+      <button type="button" class="announcement-bar__close" aria-label="Dismiss announcement">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo">Beauty Pluz</a>
+
+      <nav class="nav-primary" id="primary-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html" aria-current="page">Home</a></li>
+          <li><a href="shop.html">Shop</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" type="button" id="search-toggle" aria-label="Open search" aria-expanded="false" aria-controls="search-panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+
+        <a href="cart.html" class="icon-btn cart-btn" aria-label="View cart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"></path>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"></path>
+          </svg>
+          <span class="cart-badge" data-cart-count hidden>0</span>
+        </a>
+
+        <a class="btn-whatsapp" href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path>
+            <path d="M9 10.5c.4 1.6 2 3.2 3.6 3.6"></path>
+          </svg>
+          <span class="btn-whatsapp__label">WhatsApp</span>
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav">
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="search-panel" id="search-panel">
+      <form class="search-panel__form" action="shop.html" method="get" role="search">
+        <label for="search-input" class="visually-hidden">Search products</label>
+        <input type="search" id="search-input" name="q" placeholder="Search cleansers, serums, moisturizers…" autocomplete="off" />
+        <button type="submit" class="icon-btn" aria-label="Submit search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <div class="nav-overlay"></div>
+
+  <div class="promo-ticker" aria-label="Promotions">
+    <div class="promo-ticker__track" data-ticker-track>
+      <!-- Rendered by js/promo-ticker.js from the TICKER_ITEMS array,
+           edited in that one file. -->
+    </div>
+  </div>
+
+  <main id="main-content">
+
+    <!-- ===================== HERO CAROUSEL ===================== -->
+    <!-- Slide content lives in js/hero-carousel.js (see the SLIDES
+         array there) — this markup is just the shell: an empty
+         track, arrow buttons, and a dots container, all populated
+         and wired up by that script. -->
+    <section
+      class="hero-carousel"
+      id="hero-carousel"
+      data-hero-carousel
+      aria-roledescription="carousel"
+      aria-label="Featured Beauty Pluz collections"
+    >
+      <div class="hero-carousel__track" data-carousel-track></div>
+
+      <button
+        type="button"
+        class="hero-carousel__arrow hero-carousel__arrow--prev"
+        data-carousel-prev
+        aria-label="Previous slide"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        class="hero-carousel__arrow hero-carousel__arrow--next"
+        data-carousel-next
+        aria-label="Next slide"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+
+      <div class="hero-carousel__dots" data-carousel-dots aria-label="Slide navigation"></div>
+    </section>
+    <!-- ================= /HERO CAROUSEL ================= -->
+
+    <!-- ================ FEATURED CATEGORIES ================ -->
+    <section class="section categories" aria-labelledby="categories-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">Shop by Concern</span>
+          <h2 id="categories-heading">Find Your Ritual</h2>
+          <p class="section-head__text">Four essentials, one considered routine — start wherever your skin needs you most.</p>
+        </div>
+
+        <div class="category-grid reveal-stagger">
+          <a class="category-card" href="shop.html?category=cleanser">
+            <span class="category-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9h12v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9Z"></path>
+                <path d="M6 9V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"></path>
+                <path d="M9 5V3h6v2"></path>
+              </svg>
+            </span>
+            <h3>Cleansers</h3>
+            <p>Gentle balm-to-milk formulas that respect your barrier.</p>
+          </a>
+
+          <a class="category-card" href="shop.html?category=serum">
+            <span class="category-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 2h4v3.5l1.5 2V21a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V7.5L10 5.5V2Z"></path>
+                <path d="M9 12h6"></path>
+              </svg>
+            </span>
+            <h3>Serums</h3>
+            <p>Concentrated actives that target concerns with precision.</p>
+          </a>
+
+          <a class="category-card" href="shop.html?category=moisturizer">
+            <span class="category-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 10a7 7 0 0 1 14 0v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8Z"></path>
+                <path d="M5 10h14"></path>
+              </svg>
+            </span>
+            <h3>Moisturizers</h3>
+            <p>Barrier-first creams that lock in every step before them.</p>
+          </a>
+
+          <a class="category-card" href="shop.html?category=spf">
+            <span class="category-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4.5"></circle>
+                <path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
+              </svg>
+            </span>
+            <h3>Sun Care</h3>
+            <p>Weightless mineral protection for everyday wear.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ BEST SELLERS ================ -->
+    <section class="section section--surface bestsellers" aria-labelledby="bestsellers-heading">
+      <div class="container">
+        <div class="section-head section-head--split reveal">
+          <div>
+            <span class="eyebrow">Fan Favorites</span>
+            <h2 id="bestsellers-heading">Best Sellers</h2>
+          </div>
+          <a href="shop.html" class="link-arrow">View All Products
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </a>
+        </div>
+
+        <div class="product-grid reveal-stagger">
+
+          <article class="product-card card" data-product-id="sp-001">
+            <div class="product-card__media product-card__media--balm">
+              <span class="product-card__badge product-card__badge--bestseller">Bestseller</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9h12v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9Z"></path>
+                  <path d="M6 9V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"></path>
+                  <path d="M9 5V3h6v2"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Cleanser</p>
+              <h3 class="product-card__name">Renewing Cleansing Balm</h3>
+              <div class="product-card__rating" aria-label="Rated 4.8 out of 5 from 1,240 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(1,240)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$32</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card card" data-product-id="sp-003">
+            <div class="product-card__media product-card__media--cream">
+              <span class="product-card__badge product-card__badge--bestseller">Bestseller</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 10a7 7 0 0 1 14 0v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8Z"></path>
+                  <path d="M5 10h14"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Moisturizer</p>
+              <h3 class="product-card__name">Barrier Repair Cream</h3>
+              <div class="product-card__rating" aria-label="Rated 4.7 out of 5 from 1,580 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(1,580)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$46</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card card" data-product-id="sp-005">
+            <div class="product-card__media product-card__media--oil">
+              <span class="product-card__badge product-card__badge--bestseller">Bestseller</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3s6 7.5 6 12a6 6 0 0 1-12 0c0-4.5 6-12 6-12Z"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Facial Oil</p>
+              <h3 class="product-card__name">Overnight Renewal Oil</h3>
+              <div class="product-card__rating" aria-label="Rated 4.9 out of 5 from 970 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(970)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$64</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card card" data-product-id="sp-007">
+            <div class="product-card__media product-card__media--serum">
+              <span class="product-card__badge product-card__badge--bestseller">Bestseller</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10 2h4v3.5l1.5 2V21a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V7.5L10 5.5V2Z"></path>
+                  <path d="M9 12h6"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Serum</p>
+              <h3 class="product-card__name">Vitamin C Brightening Drops</h3>
+              <div class="product-card__rating" aria-label="Rated 4.8 out of 5 from 1,120 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(1,120)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$52</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ WHY CHOOSE BEAUTY PLUZ ================ -->
+    <section class="section section--band why-choose" aria-labelledby="why-choose-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">Our Standard</span>
+          <h2 id="why-choose-heading">Why Choose Beauty Pluz</h2>
+        </div>
+
+        <div class="why-choose__grid reveal-stagger">
+          <div class="why-choose__item">
+            <span class="why-choose__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3 4 6v6c0 4.6 3.2 8.4 8 9 4.8-.6 8-4.4 8-9V6l-8-3Z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </span>
+            <h3>Clinically Tested</h3>
+            <p>Every formula is dermatologist-reviewed before it reaches you.</p>
+          </div>
+
+          <div class="why-choose__item">
+            <span class="why-choose__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21s-7.5-4.7-10-9.2C.4 8.4 2 5 5.5 5c2 0 3.4 1 4.5 2.4C11.1 6 12.5 5 14.5 5 18 5 19.6 8.4 22 11.8 19.5 16.3 12 21 12 21Z"></path>
+              </svg>
+            </span>
+            <h3>Cruelty-Free</h3>
+            <p>Never tested on animals, at any stage of formulation.</p>
+          </div>
+
+          <div class="why-choose__item">
+            <span class="why-choose__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 20c8 0 14-5 15-15C10 6 5 11 4 20Z"></path>
+                <path d="M8 16c2.5-2.5 5-5 9-8"></path>
+              </svg>
+            </span>
+            <h3>Botanical Actives</h3>
+            <p>Plant-derived ingredients sourced for potency, not padding.</p>
+          </div>
+
+          <div class="why-choose__item">
+            <span class="why-choose__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 7 4 10l3 3M17 17l3-3-3-3M4 10h11a4 4 0 0 1 4 4v1M20 14H9a4 4 0 0 1-4-4v-1"></path>
+              </svg>
+            </span>
+            <h3>Sustainably Packaged</h3>
+            <p>Refillable glass and recycled cartons, always.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ NEW ARRIVALS ================ -->
+    <section class="section section--surface new-arrivals" aria-labelledby="new-arrivals-heading">
+      <div class="container">
+        <div class="section-head section-head--split reveal">
+          <div>
+            <span class="eyebrow">Just Landed</span>
+            <h2 id="new-arrivals-heading">New Arrivals</h2>
+          </div>
+          <a href="shop.html" class="link-arrow">View All Products
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </a>
+        </div>
+
+        <div class="product-grid reveal-stagger">
+
+          <article class="product-card card" data-product-id="sp-002">
+            <div class="product-card__media product-card__media--serum">
+              <span class="product-card__badge product-card__badge--new">New</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10 2h4v3.5l1.5 2V21a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V7.5L10 5.5V2Z"></path>
+                  <path d="M9 12h6"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Serum</p>
+              <h3 class="product-card__name">Sage &amp; Peptide Serum</h3>
+              <div class="product-card__rating" aria-label="Rated 4.9 out of 5 from 860 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(860)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$58</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card card" data-product-id="sp-004">
+            <div class="product-card__media product-card__media--mist">
+              <span class="product-card__badge product-card__badge--new">New</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 3h4v3h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1V3Z"></path>
+                  <path d="M16 7l3-1M17 9h3M16 11l3 1"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Toner</p>
+              <h3 class="product-card__name">Rosewater Balancing Mist</h3>
+              <div class="product-card__rating" aria-label="Rated 4.6 out of 5 from 410 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(410)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$24</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card card" data-product-id="sp-006">
+            <div class="product-card__media product-card__media--mask">
+              <span class="product-card__badge product-card__badge--new">New</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 11a8 8 0 0 1 16 0c0 4-3 9-8 9s-8-5-8-9Z"></path>
+                  <path d="M8 11h8"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Mask</p>
+              <h3 class="product-card__name">Clarifying Clay Mask</h3>
+              <div class="product-card__rating" aria-label="Rated 4.5 out of 5 from 260 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(260)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$38</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card card" data-product-id="sp-008">
+            <div class="product-card__media product-card__media--balm">
+              <span class="product-card__badge product-card__badge--new">New</span>
+              <span class="product-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9h12v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9Z"></path>
+                  <path d="M6 9V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"></path>
+                  <path d="M9 5V3h6v2"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="product-card__body">
+              <p class="product-card__category">Exfoliant</p>
+              <h3 class="product-card__name">Gentle Enzyme Polish</h3>
+              <div class="product-card__rating" aria-label="Rated 4.7 out of 5 from 340 reviews">
+                <span aria-hidden="true">★★★★★</span>
+                <span class="product-card__reviews">(340)</span>
+              </div>
+              <div class="product-card__footer">
+                <span class="product-card__price">$36</span>
+                <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ ABOUT PREVIEW ================ -->
+    <section class="section about-preview" aria-labelledby="about-preview-heading">
+      <div class="container about-preview__inner">
+        <div class="about-preview__media reveal">
+          <div class="about-preview__image" role="img" aria-label="Founder hand-blending a Beauty Pluz botanical formula">
+            <div class="zoom-layer" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="about-preview__content reveal">
+          <span class="eyebrow">Our Story</span>
+          <h2 id="about-preview-heading">Rooted in Botanical Science, Made for Real Mornings</h2>
+          <p>
+            Beauty Pluz began with a simple frustration: skincare that promised the earth
+            but read like a chemistry set. We formulate with a shorter, more honest list —
+            botanical actives at clinical strength, nothing there to pad a label.
+          </p>
+          <blockquote class="about-preview__quote">"Slower formulas. Faster results. That's the whole idea."</blockquote>
+          <a href="about.html" class="btn btn--secondary">Read Our Story</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ PROMOTIONAL BANNER ================ -->
+    <section class="promo-banner" aria-labelledby="promo-banner-heading">
+      <div class="promo-banner__shape promo-banner__shape--one" aria-hidden="true"></div>
+      <div class="promo-banner__shape promo-banner__shape--two" aria-hidden="true"></div>
+      <div class="container promo-banner__inner reveal">
+        <span class="eyebrow eyebrow--on-dark">Limited Time</span>
+        <h2 id="promo-banner-heading">Your First Ritual, On Us</h2>
+        <p>Take 15% off your first order — consider it an introduction.</p>
+        <div class="promo-banner__actions">
+          <code class="promo-banner__code">WELCOME15</code>
+          <a href="shop.html" class="btn btn--light">Shop Now</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ TESTIMONIALS ================ -->
+    <section class="section section--surface testimonials" aria-labelledby="testimonials-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">Loved By Thousands</span>
+          <h2 id="testimonials-heading">What Our Community Says</h2>
+        </div>
+
+        <div class="testimonial-track reveal-stagger">
+          <figure class="testimonial-card">
+            <div class="testimonial-card__rating" aria-hidden="true">★★★★★</div>
+            <blockquote>My skin has never felt this calm. The cleansing balm alone changed my entire routine — no tightness, no fragrance headache, just clean skin.</blockquote>
+            <figcaption>
+              <span class="testimonial-card__name">Amara O.</span>
+              <span class="testimonial-card__meta">Verified Buyer · Lagos</span>
+            </figcaption>
+          </figure>
+
+          <figure class="testimonial-card">
+            <div class="testimonial-card__rating" aria-hidden="true">★★★★★</div>
+            <blockquote>The peptide serum is worth every naira. Three weeks in and my colleagues keep asking what I changed. I tell them: I slowed down.</blockquote>
+            <figcaption>
+              <span class="testimonial-card__name">Chidinma E.</span>
+              <span class="testimonial-card__meta">Verified Buyer · Abuja</span>
+            </figcaption>
+          </figure>
+
+          <figure class="testimonial-card">
+            <div class="testimonial-card__rating" aria-hidden="true">★★★★★</div>
+            <blockquote>Finally a barrier cream that doesn't pill under makeup. Beauty Pluz thought about how people actually use these products.</blockquote>
+            <figcaption>
+              <span class="testimonial-card__name">Grace T.</span>
+              <span class="testimonial-card__meta">Verified Buyer · Port Harcourt</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ INSTAGRAM GALLERY ================ -->
+    <section class="section instagram-gallery" aria-labelledby="instagram-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">Tag Us @beautypluz</span>
+          <h2 id="instagram-heading">Rituals From Our Community</h2>
+        </div>
+
+        <div class="instagram-grid reveal-stagger">
+          <a class="instagram-tile" href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer">
+            <span class="instagram-tile__media zoom-layer" style="--tile-bg: linear-gradient(150deg, var(--clr-blush) 0%, var(--clr-ivory-deep) 100%);" aria-hidden="true"></span>
+            <span class="instagram-tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg></span>
+          </a>
+          <a class="instagram-tile" href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer">
+            <span class="instagram-tile__media zoom-layer" style="--tile-bg: linear-gradient(150deg, var(--clr-sage-light) 0%, var(--clr-ivory-deep) 100%);" aria-hidden="true"></span>
+            <span class="instagram-tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg></span>
+          </a>
+          <a class="instagram-tile" href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer">
+            <span class="instagram-tile__media zoom-layer" style="--tile-bg: linear-gradient(150deg, var(--clr-rose-gold-light) 0%, var(--clr-ivory-deep) 100%);" aria-hidden="true"></span>
+            <span class="instagram-tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg></span>
+          </a>
+          <a class="instagram-tile" href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer">
+            <span class="instagram-tile__media zoom-layer" style="--tile-bg: linear-gradient(150deg, var(--clr-gold-light) 0%, var(--clr-ivory-deep) 100%);" aria-hidden="true"></span>
+            <span class="instagram-tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg></span>
+          </a>
+          <a class="instagram-tile" href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer">
+            <span class="instagram-tile__media zoom-layer" style="--tile-bg: linear-gradient(150deg, var(--clr-blush) 0%, var(--clr-sage-light) 100%);" aria-hidden="true"></span>
+            <span class="instagram-tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg></span>
+          </a>
+          <a class="instagram-tile" href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer">
+            <span class="instagram-tile__media zoom-layer" style="--tile-bg: linear-gradient(150deg, var(--clr-rose-gold-light) 0%, var(--clr-sage-light) 100%);" aria-hidden="true"></span>
+            <span class="instagram-tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================ NEWSLETTER ================ -->
+    <section class="newsletter" aria-labelledby="newsletter-heading">
+      <div class="container newsletter__inner reveal">
+        <span class="eyebrow eyebrow--on-dark">Stay In The Ritual</span>
+        <h2 id="newsletter-heading">Skincare Notes, Not Spam</h2>
+        <p>One email a month — new formulas, routine tips, and first access to restocks.</p>
+
+        <form class="newsletter__form" id="newsletter-form" novalidate>
+          <label for="newsletter-email" class="visually-hidden">Email address</label>
+          <input type="email" id="newsletter-email" name="email" placeholder="you@example.com" required autocomplete="email" />
+          <button type="submit" class="btn btn--rose">Subscribe</button>
+        </form>
+        <p class="newsletter__status" id="newsletter-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- ================ WHATSAPP CTA ================ -->
+    <section class="whatsapp-cta" aria-labelledby="whatsapp-cta-heading">
+      <div class="container whatsapp-cta__inner reveal">
+        <div class="whatsapp-cta__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path>
+            <path d="M9 10.5c.4 1.6 2 3.2 3.6 3.6"></path>
+          </svg>
+        </div>
+        <div class="whatsapp-cta__text">
+          <h2 id="whatsapp-cta-heading">Have Skin Questions?</h2>
+          <p>Chat with our skincare team for real recommendations — no bots, no scripts.</p>
+        </div>
+        <a class="btn btn--whatsapp-solid" href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
+      </div>
+    </section>
+
+  </main>
+
+
+  <footer class="site-footer">
+    <div class="container footer-grid reveal">
+
+      <div class="footer-brand">
+        <p class="logo footer-brand__logo">Beauty Pluz</p>
+        <p class="footer-brand__text">Botanical skincare, formulated for real mornings. Clean actives, honest labels, no fillers.</p>
+        <div class="footer-social">
+          <a href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on Instagram" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg>
+          </a>
+          <a href="https://facebook.com/beautypluz" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on Facebook" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 8h2V4h-2a4 4 0 0 0-4 4v2H9v4h2v6h4v-6h2.5l.5-4H15V8Z"></path></svg>
+          </a>
+          <a href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on WhatsApp" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path></svg>
+          </a>
+        </div>
+      </div>
+
+      <nav class="footer-links" aria-label="Shop">
+        <h3>Shop</h3>
+        <ul>
+          <li><a href="shop.html?category=cleanser">Cleansers</a></li>
+          <li><a href="shop.html?category=serum">Serums</a></li>
+          <li><a href="shop.html?category=moisturizer">Moisturizers</a></li>
+          <li><a href="shop.html?category=spf">Sun Care</a></li>
+          <li><a href="shop.html">All Products</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-links" aria-label="Company">
+        <h3>Company</h3>
+        <ul>
+          <li><a href="about.html">Our Story</a></li>
+          <li><a href="about.html#ingredients">Ingredients</a></li>
+          <li><a href="about.html#sustainability">Sustainability</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-links" aria-label="Help">
+        <h3>Help</h3>
+        <ul>
+          <li><a href="contact.html">FAQs</a></li>
+          <li><a href="contact.html">Shipping &amp; Returns</a></li>
+          <li><a href="cart.html">Track Order</a></li>
+          <li><a href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer">WhatsApp Support</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year></span> Beauty Pluz. All rights reserved.</p>
+        <ul class="footer-legal">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="12" y1="19" x2="12" y2="5"></line>
+      <polyline points="5 12 12 5 19 12"></polyline>
+    </svg>
+  </button>
+
+  <script src="js/main.js?v=20260713" defer></script>
+  <script src="js/menu.js?v=20260713" defer></script>
+  <script src="js/cart.js?v=20260713" defer></script>
+  <script src="js/products.js?v=20260713" defer></script>
+  <script src="js/promo-ticker.js?v=20260713" defer></script>
+  <script src="js/hero-carousel.js?v=20260713" defer></script>
+</body>
+</html>

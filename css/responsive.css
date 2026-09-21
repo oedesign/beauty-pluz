@@ -1,0 +1,398 @@
+/* =========================================================
+   BEAUTY PLUZ — RESPONSIVE
+   Mobile-first base lives in style.css. This file layers on
+   breakpoint-specific adjustments, largest concern last.
+
+   Breakpoints:
+   --bp-sm   480px   large phones
+   --bp-md   768px   tablets
+   --bp-lg   1024px  small laptops / nav switch point
+   --bp-xl   1280px  desktop
+   --bp-2xl  1536px  wide desktop
+   ========================================================= */
+
+/* -----------------------------
+   Small phones (default, <480px)
+   No overrides needed — base styles in style.css
+   already target this size first.
+------------------------------ */
+
+/* -----------------------------
+   Large phones — 480px+
+------------------------------ */
+@media (min-width: 480px) {
+  .container {
+    padding-inline: var(--space-lg);
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .why-choose__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl) var(--space-md);
+  }
+
+  .shop-hero {
+    min-height: clamp(260px, 26vw, 360px);
+  }
+
+  .mission-vision__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .contact-form__row--split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .contact-form-card {
+    padding: var(--space-xl);
+  }
+}
+
+/* -----------------------------
+   Up to 599px — hide the header WhatsApp button on phones.
+   It stays reachable via the WhatsApp CTA section and footer;
+   removing it here protects the header from overflowing next
+   to the hamburger on narrow screens.
+------------------------------ */
+@media (max-width: 599px) {
+  .btn-whatsapp {
+    display: none;
+  }
+
+  .floating-card {
+    max-width: 168px;
+    padding: var(--space-2xs) var(--space-xs);
+    gap: var(--space-2xs);
+  }
+
+  .floating-card__thumb {
+    width: 34px;
+    height: 34px;
+  }
+
+  .hero__heading {
+    max-width: none;
+  }
+
+  .hero-carousel__arrow {
+    width: 38px;
+    height: 38px;
+  }
+
+  .hero-carousel__arrow svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hero-carousel__arrow--prev {
+    left: var(--space-2xs);
+  }
+
+  .hero-carousel__arrow--next {
+    right: var(--space-2xs);
+  }
+
+  .promo-ticker__item {
+    padding-inline: var(--space-sm);
+    gap: var(--space-sm);
+  }
+}
+
+/* -----------------------------
+   Up to 399px — the tightest common phone widths. Tightens
+   header spacing further so logo + search + cart + hamburger
+   never risk crowding into horizontal scroll.
+------------------------------ */
+@media (max-width: 399px) {
+  .site-header .container {
+    gap: var(--space-sm);
+  }
+
+  .nav-actions {
+    gap: var(--space-3xs);
+  }
+
+  .logo {
+    font-size: 1.05rem;
+  }
+
+  .icon-btn,
+  .nav-toggle {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* -----------------------------
+   Tablets — 768px+
+------------------------------ */
+@media (min-width: 768px) {
+  .grid--2-col-md {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .section {
+    padding-block: var(--space-3xl);
+  }
+
+  .hero__image-wrap {
+    width: min(100%, 460px);
+  }
+
+  .floating-card {
+    max-width: 240px;
+  }
+
+  .category-card {
+    padding: var(--space-lg);
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .why-choose__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .instagram-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .testimonial-track {
+    grid-auto-columns: 60%;
+  }
+
+  .newsletter__form {
+    flex-direction: row;
+  }
+
+  .newsletter__form .btn {
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .whatsapp-cta__inner {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cart-row {
+    grid-template-columns: 72px 1fr auto auto;
+    grid-template-areas: "media details qty total";
+  }
+}
+
+/* -----------------------------
+   Small laptops — 1024px+
+   Primary nav switches from the off-canvas drawer to inline links;
+   search/cart/whatsapp/hamburger controls settle into their
+   permanent desktop layout.
+------------------------------ */
+@media (min-width: 1024px) {
+  .nav-primary {
+    position: static;
+    width: auto;
+    max-width: none;
+    height: auto;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    visibility: visible;
+    pointer-events: auto;
+    transition: none;
+    overflow: visible;
+  }
+
+  .nav-primary ul {
+    flex-direction: row;
+    padding: 0;
+    gap: var(--space-lg);
+  }
+
+  .nav-primary li {
+    border-bottom: none;
+  }
+
+  .nav-primary a {
+    position: relative;
+    padding: var(--space-2xs) 0;
+    font-size: var(--fs-sm);
+  }
+
+  .nav-primary a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1.5px;
+    background-color: var(--clr-sage-dark);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .nav-primary a:hover,
+  .nav-primary a:focus-visible {
+    padding-left: 0;
+  }
+
+  .nav-primary a:hover::after,
+  .nav-primary a:focus-visible::after,
+  .nav-primary a[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+
+  .nav-toggle,
+  .nav-overlay {
+    display: none;
+  }
+
+  .grid--3-col-lg {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .grid--4-col-lg {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .contact-layout {
+    grid-template-columns: 0.85fr 1fr;
+  }
+
+  .hero-carousel__arrow {
+    width: 56px;
+    height: 56px;
+  }
+
+  .hero-carousel__arrow--prev {
+    left: var(--space-lg);
+  }
+
+  .hero-carousel__arrow--next {
+    right: var(--space-lg);
+  }
+
+  .hero-carousel__content {
+    padding-inline: var(--space-lg);
+  }
+
+  .hero__inner {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+    gap: var(--space-3xl);
+  }
+
+  .hero__image-wrap {
+    width: min(100%, 480px);
+  }
+
+  .floating-card--top {
+    top: 8%;
+    left: -9%;
+  }
+
+  .floating-card--bottom {
+    bottom: 10%;
+    right: -7%;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .about-preview__inner {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3xl);
+  }
+
+  .instagram-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .testimonial-track {
+    grid-auto-flow: initial;
+    grid-template-columns: repeat(3, 1fr);
+    overflow-x: visible;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  }
+
+  .cart-layout {
+    grid-template-columns: 1fr 360px;
+  }
+
+  .cart-summary {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-md));
+  }
+}
+
+/* -----------------------------
+   Desktop — 1280px+
+------------------------------ */
+@media (min-width: 1280px) {
+  :root {
+    --header-height: 96px;
+  }
+}
+
+/* -----------------------------
+   Wide desktop — 1536px+
+------------------------------ */
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1400px;
+  }
+}
+
+/* -----------------------------
+   Fine-pointer only (hover-capable devices)
+   Keeps hover affordances off touch devices.
+------------------------------ */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* -----------------------------
+   Print
+------------------------------ */
+@media print {
+  .site-header,
+  .site-footer,
+  .nav-toggle,
+  .btn {
+    display: none !important;
+  }
+}

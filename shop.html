@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop — Beauty Pluz</title>
+  <meta name="description" content="Shop the full Beauty Pluz collection — cleansers, serums, moisturizers, and more." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css?v=20260713" />
+  <link rel="stylesheet" href="css/responsive.css?v=20260713" />
+  <link rel="stylesheet" href="css/animations.css?v=20260713" />
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="announcement-bar" id="announcement-bar">
+    <div class="container announcement-bar__inner">
+      <p class="announcement-bar__text">Free shipping on orders over $75 · New: The Ritual Edit is here</p>
+      <button type="button" class="announcement-bar__close" aria-label="Dismiss announcement">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo">Beauty Pluz</a>
+
+      <nav class="nav-primary" id="primary-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="shop.html" aria-current="page">Shop</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" type="button" id="search-toggle" aria-label="Open search" aria-expanded="false" aria-controls="search-panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+
+        <a href="cart.html" class="icon-btn cart-btn" aria-label="View cart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"></path>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"></path>
+          </svg>
+          <span class="cart-badge" data-cart-count hidden>0</span>
+        </a>
+
+        <a class="btn-whatsapp" href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path>
+            <path d="M9 10.5c.4 1.6 2 3.2 3.6 3.6"></path>
+          </svg>
+          <span class="btn-whatsapp__label">WhatsApp</span>
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav">
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="search-panel" id="search-panel">
+      <form class="search-panel__form" action="shop.html" method="get" role="search">
+        <label for="search-input" class="visually-hidden">Search products</label>
+        <input type="search" id="search-input" name="q" placeholder="Search cleansers, serums, moisturizers…" autocomplete="off" />
+        <button type="submit" class="icon-btn" aria-label="Submit search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <div class="nav-overlay"></div>
+
+  <main id="main-content">
+
+    <!-- ================= SHOP HERO BANNER ================= -->
+    <section class="shop-hero" aria-label="Shop introduction">
+      <div class="shop-hero__media" role="img" aria-label="Beauty Pluz botanical products arranged on a light surface"></div>
+      <div class="container shop-hero__inner">
+        <span class="eyebrow">The Full Collection</span>
+        <h1>Shop All Products</h1>
+        <p>Considered formulas for every step of your ritual — cleansers to sun care, all in one place.</p>
+      </div>
+    </section>
+
+    <!-- ================= BREADCRUMB ================= -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <div class="container">
+        <ol>
+          <li><a href="index.html">Home</a></li>
+          <li aria-current="page">Shop</li>
+        </ol>
+      </div>
+    </nav>
+
+    <!-- ================= SHOP TOOLBAR + PRODUCT GRID ================= -->
+    <section class="section section--surface shop-listing" aria-label="Product listing">
+      <div class="container">
+
+        <div class="shop-toolbar">
+          <p class="shop-toolbar__count" data-product-count>Showing products</p>
+
+          <div class="shop-toolbar__actions">
+            <button type="button" class="shop-toolbar__filter-btn" data-filter-toggle aria-expanded="false" aria-controls="filter-drawer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <circle cx="9" cy="7" r="2"></circle>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+                <circle cx="16" cy="17" r="2"></circle>
+              </svg>
+              Filter
+            </button>
+
+            <div class="shop-toolbar__sort">
+              <label for="sort-select" class="visually-hidden">Sort products</label>
+              <select id="sort-select" name="sort">
+                <option value="featured">Featured</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="newest">Newest</option>
+                <option value="best-selling">Best Selling</option>
+              </select>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+
+            <div class="shop-toolbar__view" role="group" aria-label="Layout view">
+              <button type="button" class="shop-toolbar__view-btn is-active" data-view-toggle="grid" aria-pressed="true" aria-label="Grid view">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                  <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                  <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                  <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                </svg>
+              </button>
+              <button type="button" class="shop-toolbar__view-btn" data-view-toggle="list" aria-pressed="false" aria-label="List view">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="4" y1="6" x2="20" y2="6"></line>
+                  <line x1="4" y1="12" x2="20" y2="12"></line>
+                  <line x1="4" y1="18" x2="20" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product cards aren't built yet — these skeleton placeholders
+             reuse .card (radius + shadow) and .skeleton (shimmer) so the
+             grid still reads as intentional rather than empty. -->
+        <div class="product-grid" data-product-grid aria-busy="true" aria-label="Products loading">
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 40%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 85%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 35%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 75%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 45%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 80%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 38%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 70%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 42%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 82%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 40%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 78%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 36%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 74%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div class="card product-skeleton" aria-hidden="true">
+            <div class="skeleton product-skeleton__media"></div>
+            <div class="product-skeleton__body">
+              <div class="skeleton product-skeleton__line" style="width: 44%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 83%;"></div>
+              <div class="skeleton product-skeleton__line" style="width: 30%;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= PROMOTIONAL BANNER ================= -->
+    <section class="promo-banner" aria-labelledby="shop-promo-heading">
+      <div class="promo-banner__shape promo-banner__shape--one" aria-hidden="true"></div>
+      <div class="promo-banner__shape promo-banner__shape--two" aria-hidden="true"></div>
+      <div class="container promo-banner__inner reveal">
+        <span class="eyebrow eyebrow--on-dark">Free Shipping</span>
+        <h2 id="shop-promo-heading">On Every Order Over $75</h2>
+        <p>No code needed — the discount applies automatically at checkout.</p>
+        <div class="promo-banner__actions">
+          <a href="#main-content" class="btn btn--light">Continue Shopping</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= NEWSLETTER ================= -->
+    <section class="newsletter" aria-labelledby="newsletter-heading">
+      <div class="container newsletter__inner reveal">
+        <span class="eyebrow eyebrow--on-dark">Stay In The Ritual</span>
+        <h2 id="newsletter-heading">Skincare Notes, Not Spam</h2>
+        <p>One email a month — new formulas, routine tips, and first access to restocks.</p>
+
+        <form class="newsletter__form" id="newsletter-form" novalidate>
+          <label for="newsletter-email" class="visually-hidden">Email address</label>
+          <input type="email" id="newsletter-email" name="email" placeholder="you@example.com" required autocomplete="email" />
+          <button type="submit" class="btn btn--rose">Subscribe</button>
+        </form>
+        <p class="newsletter__status" id="newsletter-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FILTER DRAWER ================= -->
+  <aside class="filter-drawer" id="filter-drawer" data-filter-drawer aria-label="Filter products">
+    <div class="filter-drawer__header">
+      <h2>Filter</h2>
+      <button type="button" class="icon-btn" data-filter-close aria-label="Close filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="filter-drawer__body">
+      <div class="filter-group">
+        <h3>Category</h3>
+        <label class="filter-option"><input type="checkbox" name="category" value="cleanser" /> Cleansers</label>
+        <label class="filter-option"><input type="checkbox" name="category" value="serum" /> Serums</label>
+        <label class="filter-option"><input type="checkbox" name="category" value="moisturizer" /> Moisturizers</label>
+        <label class="filter-option"><input type="checkbox" name="category" value="toner" /> Toners &amp; Mists</label>
+        <label class="filter-option"><input type="checkbox" name="category" value="oil" /> Facial Oils</label>
+        <label class="filter-option"><input type="checkbox" name="category" value="mask" /> Masks</label>
+        <label class="filter-option"><input type="checkbox" name="category" value="spf" /> Sun Care</label>
+      </div>
+
+      <div class="filter-group">
+        <h3>Price</h3>
+        <label class="filter-option"><input type="radio" name="price" value="under-30" /> Under $30</label>
+        <label class="filter-option"><input type="radio" name="price" value="30-50" /> $30 – $50</label>
+        <label class="filter-option"><input type="radio" name="price" value="50-plus" /> $50+</label>
+      </div>
+    </div>
+
+    <div class="filter-drawer__footer">
+      <button type="button" class="btn btn--secondary" data-filter-clear data-filter-close>Clear</button>
+      <button type="button" class="btn btn--primary" data-filter-close>Apply</button>
+    </div>
+  </aside>
+
+  <div class="nav-overlay" data-filter-overlay></div>
+
+  <footer class="site-footer">
+    <div class="container footer-grid reveal">
+
+      <div class="footer-brand">
+        <p class="logo footer-brand__logo">Beauty Pluz</p>
+        <p class="footer-brand__text">Botanical skincare, formulated for real mornings. Clean actives, honest labels, no fillers.</p>
+        <div class="footer-social">
+          <a href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on Instagram" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg>
+          </a>
+          <a href="https://facebook.com/beautypluz" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on Facebook" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 8h2V4h-2a4 4 0 0 0-4 4v2H9v4h2v6h4v-6h2.5l.5-4H15V8Z"></path></svg>
+          </a>
+          <a href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on WhatsApp" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path></svg>
+          </a>
+        </div>
+      </div>
+
+      <nav class="footer-links" aria-label="Shop">
+        <h3>Shop</h3>
+        <ul>
+          <li><a href="shop.html?category=cleanser">Cleansers</a></li>
+          <li><a href="shop.html?category=serum">Serums</a></li>
+          <li><a href="shop.html?category=moisturizer">Moisturizers</a></li>
+          <li><a href="shop.html?category=spf">Sun Care</a></li>
+          <li><a href="shop.html">All Products</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-links" aria-label="Company">
+        <h3>Company</h3>
+        <ul>
+          <li><a href="about.html">Our Story</a></li>
+          <li><a href="about.html#ingredients">Ingredients</a></li>
+          <li><a href="about.html#sustainability">Sustainability</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-links" aria-label="Help">
+        <h3>Help</h3>
+        <ul>
+          <li><a href="contact.html">FAQs</a></li>
+          <li><a href="contact.html">Shipping &amp; Returns</a></li>
+          <li><a href="cart.html">Track Order</a></li>
+          <li><a href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer">WhatsApp Support</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year></span> Beauty Pluz. All rights reserved.</p>
+        <ul class="footer-legal">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="12" y1="19" x2="12" y2="5"></line>
+      <polyline points="5 12 12 5 19 12"></polyline>
+    </svg>
+  </button>
+
+  <script src="js/main.js?v=20260713" defer></script>
+  <script src="js/menu.js?v=20260713" defer></script>
+  <script src="js/cart.js?v=20260713" defer></script>
+  <script src="js/products.js?v=20260713" defer></script>
+</body>
+</html>

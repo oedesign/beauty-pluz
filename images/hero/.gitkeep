@@ -1,0 +1,25 @@
+Drop hero lifestyle photography here.
+
+Homepage hero carousel (js/hero-carousel.js, SLIDES array):
+  Now uses real, licensed photography hotlinked from Unsplash's CDN
+  (free tier — Unsplash License, commercial use OK, no attribution
+  required: https://unsplash.com/license), sized per-viewport via
+  buildImageUrl() in that file. No local files are required for the
+  carousel.
+
+  If you'd rather self-host instead of hotlinking:
+  1. Download the three photos referenced by `imageId` in the
+     SLIDES array (open https://unsplash.com/photos/<imageId> for
+     each, e.g. https://unsplash.com/photos/1643379850623-7eb6442cd262
+     — note the ID in that URL differs slightly from the slug-style
+     URLs Unsplash's UI shows; search images.unsplash.com/photo-<id>
+     directly, or re-search Unsplash for the photographer names
+     credited in hero-carousel.js).
+  2. Save them here as carousel-slide-1.jpg / -2.jpg / -3.jpg.
+  3. In hero-carousel.js, change buildImageUrl() to return
+     `images/hero/carousel-slide-${n}.jpg` instead of building an
+     Unsplash URL.
+
+Also referenced elsewhere on the site:
+  hero-lifestyle.jpg    — portrait, ~1000x1250px (About page preview)
+Recommended tone throughout: warm, soft natural light.

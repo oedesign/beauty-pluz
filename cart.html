@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Cart — Beauty Pluz</title>
+  <meta name="description" content="Review the items in your Beauty Pluz cart before checkout." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css?v=20260713" />
+  <link rel="stylesheet" href="css/responsive.css?v=20260713" />
+  <link rel="stylesheet" href="css/animations.css?v=20260713" />
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="announcement-bar" id="announcement-bar">
+    <div class="container announcement-bar__inner">
+      <p class="announcement-bar__text">Free shipping on orders over $75 · New: The Ritual Edit is here</p>
+      <button type="button" class="announcement-bar__close" aria-label="Dismiss announcement">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo">Beauty Pluz</a>
+
+      <nav class="nav-primary" id="primary-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="shop.html">Shop</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" type="button" id="search-toggle" aria-label="Open search" aria-expanded="false" aria-controls="search-panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+
+        <a href="cart.html" class="icon-btn cart-btn" aria-current="page" aria-label="View cart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"></path>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"></path>
+          </svg>
+          <span class="cart-badge" data-cart-count hidden>0</span>
+        </a>
+
+        <a class="btn-whatsapp" href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path>
+            <path d="M9 10.5c.4 1.6 2 3.2 3.6 3.6"></path>
+          </svg>
+          <span class="btn-whatsapp__label">WhatsApp</span>
+        </a>
+
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav">
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="search-panel" id="search-panel">
+      <form class="search-panel__form" action="shop.html" method="get" role="search">
+        <label for="search-input" class="visually-hidden">Search products</label>
+        <input type="search" id="search-input" name="q" placeholder="Search cleansers, serums, moisturizers…" autocomplete="off" />
+        <button type="submit" class="icon-btn" aria-label="Submit search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <div class="nav-overlay"></div>
+
+  <main id="main-content">
+    <section class="section cart-page" aria-labelledby="cart-heading">
+      <div class="container">
+
+        <div class="cart-page__head reveal">
+          <h1 id="cart-heading">Your Cart</h1>
+          <p>Review your ritual before checkout.</p>
+        </div>
+
+        <!-- Empty state — shown by JS when the cart has no items -->
+        <div class="cart-empty" data-cart-empty hidden>
+          <span class="cart-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"></path>
+              <path d="M9 8V6a3 3 0 0 1 6 0v2"></path>
+            </svg>
+          </span>
+          <h2>Your cart is empty</h2>
+          <p>Add a few considered essentials and they'll show up here.</p>
+          <a href="shop.html" class="btn btn--rose">Start Shopping</a>
+        </div>
+
+        <!-- Cart layout — hidden by JS when the cart is empty -->
+        <div class="cart-layout" data-cart-layout hidden>
+          <div class="cart-list" data-cart-list role="list" aria-label="Items in your cart">
+            <!-- Rows are rendered by js/cart.js -->
+          </div>
+
+          <aside class="cart-summary" data-cart-summary aria-label="Order summary">
+            <h2 class="cart-summary__heading">Order Summary</h2>
+
+            <div class="cart-summary__totals" data-cart-summary-totals>
+              <!-- Number of items / subtotal / delivery estimate / grand total, rendered by js/cart.js -->
+            </div>
+
+            <div class="cart-summary__delivery">
+              <h3 class="cart-summary__delivery-heading">Delivery Details</h3>
+              <p class="cart-summary__delivery-hint">We'll include this with your order on WhatsApp.</p>
+
+              <div class="field">
+                <label for="customer-name">Full Name</label>
+                <input type="text" id="customer-name" name="customerName" autocomplete="name" placeholder="Jane Doe" />
+              </div>
+
+              <div class="field">
+                <label for="customer-phone">Phone Number</label>
+                <input type="tel" id="customer-phone" name="customerPhone" autocomplete="tel" placeholder="+234 800 000 0000" />
+              </div>
+
+              <div class="field">
+                <label for="customer-address">Delivery Address</label>
+                <textarea id="customer-address" name="customerAddress" rows="2" placeholder="Street, city, state"></textarea>
+              </div>
+
+              <p class="cart-summary__error" data-delivery-error role="alert" hidden></p>
+            </div>
+
+            <button type="button" class="btn btn--whatsapp-solid cart-summary__whatsapp" data-order-whatsapp disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path>
+                <path d="M9 10.5c.4 1.6 2 3.2 3.6 3.6"></path>
+              </svg>
+              Order via WhatsApp
+            </button>
+
+            <a href="shop.html" class="link-arrow cart-summary__continue">Continue Shopping
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
+          </aside>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid reveal">
+
+      <div class="footer-brand">
+        <p class="logo footer-brand__logo">Beauty Pluz</p>
+        <p class="footer-brand__text">Botanical skincare, formulated for real mornings. Clean actives, honest labels, no fillers.</p>
+        <div class="footer-social">
+          <a href="https://instagram.com/beautypluz" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on Instagram" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg>
+          </a>
+          <a href="https://facebook.com/beautypluz" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on Facebook" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 8h2V4h-2a4 4 0 0 0-4 4v2H9v4h2v6h4v-6h2.5l.5-4H15V8Z"></path></svg>
+          </a>
+          <a href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer" aria-label="Beauty Pluz on WhatsApp" class="footer-social__link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path></svg>
+          </a>
+        </div>
+      </div>
+
+      <nav class="footer-links" aria-label="Shop">
+        <h3>Shop</h3>
+        <ul>
+          <li><a href="shop.html?category=cleanser">Cleansers</a></li>
+          <li><a href="shop.html?category=serum">Serums</a></li>
+          <li><a href="shop.html?category=moisturizer">Moisturizers</a></li>
+          <li><a href="shop.html?category=spf">Sun Care</a></li>
+          <li><a href="shop.html">All Products</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-links" aria-label="Company">
+        <h3>Company</h3>
+        <ul>
+          <li><a href="about.html">Our Story</a></li>
+          <li><a href="about.html#ingredients">Ingredients</a></li>
+          <li><a href="about.html#sustainability">Sustainability</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-links" aria-label="Help">
+        <h3>Help</h3>
+        <ul>
+          <li><a href="contact.html">FAQs</a></li>
+          <li><a href="contact.html">Shipping &amp; Returns</a></li>
+          <li><a href="cart.html">Track Order</a></li>
+          <li><a href="https://wa.me/10000000000" target="_blank" rel="noopener noreferrer">WhatsApp Support</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year></span> Beauty Pluz. All rights reserved.</p>
+        <ul class="footer-legal">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="12" y1="19" x2="12" y2="5"></line>
+      <polyline points="5 12 12 5 19 12"></polyline>
+    </svg>
+  </button>
+
+  <script src="js/main.js?v=20260713" defer></script>
+  <script src="js/menu.js?v=20260713" defer></script>
+  <script src="js/cart.js?v=20260713" defer></script>
+  <script src="js/products.js?v=20260713" defer></script>
+</body>
+</html>
