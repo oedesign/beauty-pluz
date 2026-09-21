@@ -5,9 +5,8 @@
    remove a slide by editing this array — no other code needs to
    change) and rendered into the DOM by renderSlide()/renderDot().
 
-   Images are real, licensed Unsplash photography (free tier —
-   see the note above SLIDES for licensing details), requested at
-   a size appropriate to the viewport via buildImageUrl().
+   Every slide points to a local image file in images/hero/, so the
+   carousel works without a remote image service.
 
    Behaviour:
    - Advances automatically every 5.5s.
@@ -25,41 +24,15 @@
   "use strict";
 
   /**
-   * Slide shape:
-   * {
-   *   id: string,
-   *   imageId: string       — Unsplash photo ID (see note below)
-   *   theme: string          — ink-tinted gradient painted underneath
-   *                            the photo; shows instantly before the
-   *                            photo loads, and stays as a fallback if
-   *                            it ever fails to load
-   *   credit: { name, profileUrl } — photographer, for the credits
-   *                            comment below (Unsplash's License does
-   *                            not require on-page attribution, but
-   *                            it's good practice to keep it on record)
-   *   eyebrow: string,
-   *   heading: string,
-   *   description: string,
-   *   primaryCta: { label, href },
-   *   secondaryCta: { label, href } | null,
-   *   align: "left" | "right"  — which side the text panel sits on
-   * }
-   *
-   * Photography: real, licensed photos from Unsplash (free tier —
-   * Unsplash License: free for commercial use, no attribution
-   * required: https://unsplash.com/license). buildImageUrl() below
-   * requests each photo through Unsplash's own imgix-based resizing
-   * endpoint (the same one unsplash.com itself uses) at a size
-   * appropriate to the viewport, cropped to a wide hero aspect ratio,
-   * and with auto=format so supporting browsers get WebP/AVIF instead
-   * of a full JPEG — this is the "optimize for performance" piece.
+   * Slide shape: { id, image, theme, eyebrow, heading, description,
+   * primaryCta, secondaryCta, align }. Add, remove, or reorder objects in
+   * this list and place the corresponding local file in images/hero/.
    */
   const SLIDES = [
     {
       id: "slow-mornings",
-      imageId: "1643379850623-7eb6442cd262",
+      image: "images/hero/slow-mornings.svg",
       theme: "sage",
-      credit: { name: "Cherrydeck", profileUrl: "https://unsplash.com/@cherrydeck" },
       eyebrow: "Clean · Clinical · Considered",
       heading: "Skincare made for slow mornings",
       description:
@@ -70,9 +43,8 @@
     },
     {
       id: "your-ritual",
-      imageId: "1741896135490-4062a3b21abf",
+      image: "images/hero/your-ritual.svg",
       theme: "rose",
-      credit: { name: "Maria Lupan", profileUrl: "https://unsplash.com/@luandmario" },
       eyebrow: "Your Skin, Your Ritual",
       heading: "Discover your perfect skincare routine",
       description:
@@ -83,9 +55,8 @@
     },
     {
       id: "new-arrivals",
-      imageId: "1620916297397-a4a5402a3c6c",
+      image: "images/hero/new-arrivals.svg",
       theme: "blush",
-      credit: { name: "Mathilde Langevin", profileUrl: "https://unsplash.com/@mathildelangevin" },
       eyebrow: "New Arrivals",
       heading: "Meet your new skincare essentials",
       description:
@@ -96,21 +67,8 @@
     },
   ];
 
-  // Photo credits (Unsplash License — no attribution legally required,
-  // kept here for provenance): Cherrydeck, Maria Lupan, Mathilde
-  // Langevin. See each slide's `credit` field above for profile links.
-
-  /** Builds a sized, cropped, format-optimized Unsplash image URL.
-      Requests a smaller image for phones than for desktop, so mobile
-      visitors aren't downloading a full desktop-width hero photo. */
-  function buildImageUrl(imageId) {
-    const width = window.innerWidth < 768 ? 900 : window.innerWidth < 1280 ? 1600 : 1920;
-    const height = Math.round(width * (9 / 16));
-    return (
-      `https://images.unsplash.com/photo-${imageId}` +
-      `?w=${width}&h=${height}&fit=crop&crop=entropy&auto=format&q=75`
-    );
-  }
+  // Images are deliberately local. Add, remove, or reorder entries in
+  // SLIDES and place the corresponding file in images/hero/.
 
   const AUTOPLAY_INTERVAL_MS = 5500;
 
@@ -132,7 +90,7 @@
         aria-label="Slide ${index + 1} of ${total}"
         aria-hidden="${index === 0 ? "false" : "true"}"
       >
-        <div class="hero-carousel__media" data-theme="${slide.theme}" style="background-image: url('${buildImageUrl(slide.imageId)}');" aria-hidden="true"></div>
+        <div class="hero-carousel__media" data-theme="${slide.theme}" style="background-image: url('${slide.image}');" aria-hidden="true"></div>
         <div class="hero-carousel__scrim" aria-hidden="true"></div>
         <div class="hero-carousel__content">
           <div class="hero-carousel__inner">
