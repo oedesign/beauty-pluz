@@ -27,7 +27,7 @@
       name: "Renewing Cleansing Balm",
       category: "cleanser",
       price: 32,
-      image: "images/products/cleansing-balm.jpg",
+      image: "images/products/cleansing-balm.svg",
       description: "A botanical balm that melts away impurities without stripping the skin barrier.",
       badge: "bestseller",
       icon: "balm",
@@ -39,7 +39,7 @@
       name: "Sage & Peptide Serum",
       category: "serum",
       price: 58,
-      image: "images/products/peptide-serum.jpg",
+      image: "images/products/peptide-serum.svg",
       description: "Concentrated peptides and sage extract to firm and brighten over time.",
       badge: "new",
       icon: "serum",
@@ -51,7 +51,7 @@
       name: "Barrier Repair Cream",
       category: "moisturizer",
       price: 46,
-      image: "images/products/repair-cream.jpg",
+      image: "images/products/repair-cream.svg",
       description: "A rich, ceramide-forward cream that locks in moisture for 24 hours.",
       badge: "bestseller",
       icon: "cream",
@@ -63,7 +63,7 @@
       name: "Rosewater Balancing Mist",
       category: "toner",
       price: 24,
-      image: "images/products/rosewater-mist.jpg",
+      image: "images/products/rosewater-mist.svg",
       description: "A weightless mist that resets and hydrates skin any time of day.",
       badge: "new",
       icon: "mist",
@@ -75,7 +75,7 @@
       name: "Overnight Renewal Oil",
       category: "oil",
       price: 64,
-      image: "images/products/renewal-oil.jpg",
+      image: "images/products/renewal-oil.svg",
       description: "A silky facial oil that works while you sleep to restore radiance by morning.",
       badge: "bestseller",
       icon: "oil",
@@ -87,7 +87,7 @@
       name: "Clarifying Clay Mask",
       category: "mask",
       price: 38,
-      image: "images/products/clay-mask.jpg",
+      image: "images/products/clay-mask.svg",
       description: "Mineral-rich clay that draws out impurities without over-drying skin.",
       badge: "new",
       icon: "mask",
@@ -99,7 +99,7 @@
       name: "Vitamin C Brightening Drops",
       category: "serum",
       price: 52,
-      image: "images/products/vitamin-c-drops.jpg",
+      image: "images/products/vitamin-c-drops.svg",
       description: "A stable, gentle vitamin C concentrate that evens tone without irritation.",
       badge: "bestseller",
       icon: "serum",
@@ -111,7 +111,7 @@
       name: "Gentle Enzyme Polish",
       category: "exfoliant",
       price: 36,
-      image: "images/products/enzyme-polish.jpg",
+      image: "images/products/enzyme-polish.svg",
       description: "Fruit enzymes and fine rice powder buff away dullness without micro-tears.",
       badge: "new",
       icon: "balm",
@@ -123,7 +123,7 @@
       name: "Mineral Sheer Sunscreen SPF 40",
       category: "spf",
       price: 34,
-      image: "images/products/mineral-spf.jpg",
+      image: "images/products/mineral-spf.svg",
       description: "A weightless, no-white-cast mineral filter for everyday protection.",
       badge: "new",
       icon: "spf",
@@ -135,7 +135,7 @@
       name: "Creamy Milk Cleanser",
       category: "cleanser",
       price: 28,
-      image: "images/products/milk-cleanser.jpg",
+      image: "images/products/milk-cleanser.svg",
       description: "A soft, low-foam cleanser that leaves skin comfortable, never tight.",
       badge: "",
       icon: "cream",
@@ -147,7 +147,7 @@
       name: "Overnight Repair Gel Cream",
       category: "moisturizer",
       price: 48,
-      image: "images/products/repair-gel-cream.jpg",
+      image: "images/products/repair-gel-cream.svg",
       description: "A lightweight gel-cream that supports skin's natural repair cycle while you sleep.",
       badge: "bestseller",
       icon: "cream",
@@ -159,7 +159,7 @@
       name: "Hydrating Essence Toner",
       category: "toner",
       price: 30,
-      image: "images/products/hydrating-essence.jpg",
+      image: "images/products/hydrating-essence.svg",
       description: "A hydrating first step that preps skin to absorb everything layered after it.",
       badge: "",
       icon: "mist",
@@ -259,9 +259,9 @@
     return `
       <article class="${cardClass}"${cardStyle} data-product-id="${product.id}">
         <div class="product-card__media">
-          <div class="product-card__image product-card__image--${product.icon} zoom-layer" aria-hidden="true">
-            ${Products.getIconMarkup(product.icon)}
-          </div>
+          <a class="product-card__image-link" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View details for ${product.name}">
+            <img class="product-card__image zoom-layer" src="${product.image}" alt="${product.name}" loading="lazy" />
+          </a>
           ${badgeMarkup}
           <button type="button" class="product-card__wishlist" data-wishlist-toggle aria-label="Add ${product.name} to wishlist" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -649,6 +649,38 @@
     });
   }
 
+
+  /** Makes the hand-authored homepage cards use the same local image source
+      and product-detail link as the catalogue. The product id remains the
+      single association between every display and its product data. */
+  function hydrateHomepageProductCards() {
+    document.querySelectorAll(".product-card[data-product-id]").forEach((card) => {
+      const product = Products.getById(card.getAttribute("data-product-id"));
+      const media = card.querySelector(".product-card__media");
+      if (!product || !media || media.querySelector(".product-card__image-link")) return;
+      const badge = media.querySelector(".product-card__badge");
+      const wishlist = media.querySelector(".product-card__wishlist");
+      media.innerHTML = `<a class="product-card__image-link" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View details for ${product.name}"><img class="product-card__image zoom-layer" src="${product.image}" alt="${product.name}" loading="lazy" /></a>`;
+      if (badge) media.appendChild(badge);
+      if (wishlist) media.appendChild(wishlist);
+      card.querySelector(".product-card__name")?.closest("h3")?.replaceChildren(Object.assign(document.createElement("a"), { href: `product.html?id=${encodeURIComponent(product.id)}`, textContent: product.name }));
+    });
+  }
+
+  function renderProductDetail() {
+    const target = document.querySelector("[data-product-detail]");
+    if (!target) return;
+    const id = new URLSearchParams(window.location.search).get("id");
+    const product = Products.getById(id);
+    if (!product) {
+      target.innerHTML = `<div class="product-detail__missing"><h1>Product not found</h1><p>That product is no longer in our collection.</p><a class="btn btn--primary" href="shop.html">Return to shop</a></div>`;
+      return;
+    }
+    const category = CATEGORY_LABELS[product.category] || product.category;
+    const reviews = product.reviewCount.toLocaleString("en-US");
+    target.innerHTML = `<a class="link-arrow product-detail__back" href="shop.html">← Back to all products</a><div class="product-detail__layout"><div class="product-detail__media"><img src="${product.image}" alt="${product.name}" /></div><div class="product-detail__content" data-product-id="${product.id}"><p class="product-detail__category">${category}</p><h1>${product.name}</h1><p class="product-detail__rating"><span aria-hidden="true">★★★★★</span> ${product.rating} (${reviews} reviews)</p><p class="product-detail__price">$${product.price}</p><p class="product-detail__description">${product.description}</p><ul class="product-detail__benefits"><li>Small-batch botanical formula</li><li>Made for a considered daily ritual</li><li>Free shipping on orders over $75</li></ul><button type="button" class="btn btn--primary" data-add-to-cart>Add to Cart</button></div></div>`;
+  }
+
   // Render order matters here: the shop grid must exist in the DOM
   // (renderShopGrid) before initProductCardActions/initWishlistToggles
   // query it for buttons to wire up. Running these in one listener,
@@ -666,6 +698,8 @@
     initCategoryAndPriceFilters();
     initSortSelect();
     renderShopGrid();
+    hydrateHomepageProductCards();
+    renderProductDetail();
     initProductCardActions();
     initWishlistToggles();
   });

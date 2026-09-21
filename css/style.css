@@ -1174,7 +1174,7 @@ main {
      rather than a broken-image icon. Swap the url() for real
      lifestyle photography in images/hero/. */
   background-image:
-    url("images/hero/hero-lifestyle.jpg"),
+    url("../images/hero/slow-mornings.svg"),
     linear-gradient(rgba(38, 36, 32, 0.02), rgba(38, 36, 32, 0.08)),
     linear-gradient(160deg, var(--clr-rose-gold-light) 0%, var(--clr-ivory-deep) 55%, var(--clr-blush) 100%);
   background-size: cover;
@@ -1638,7 +1638,7 @@ main {
 
 .about-preview__image .zoom-layer {
   background-image:
-    url("images/hero/about-preview.jpg"),
+    url("../images/hero/your-ritual.svg"),
     linear-gradient(rgba(38, 36, 32, 0.02), rgba(38, 36, 32, 0.08)),
     linear-gradient(155deg, var(--clr-sage-light) 0%, var(--clr-ivory-deep) 60%, var(--clr-rose-gold-light) 100%);
   background-size: cover;
@@ -2495,7 +2495,7 @@ main {
   position: absolute;
   inset: 0;
   background-image:
-    url("images/hero/shop-banner.jpg"),
+    url("../images/hero/new-arrivals.svg"),
     linear-gradient(155deg, var(--clr-sage) 0%, var(--clr-ink) 100%);
   background-size: cover;
   background-position: center;
@@ -3433,4 +3433,134 @@ main {
 .hero-carousel__dot[aria-current="true"] {
   background-color: var(--clr-white);
   transform: scale(1.3);
+}
+
+/* -----------------------------
+   40. LOCAL PRODUCT IMAGES + DETAIL PAGE
+------------------------------ */
+.product-card__image-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.product-card__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.product-card:hover .product-card__image,
+.product-card__image-link:focus-visible .product-card__image {
+  transform: scale(1.06);
+}
+
+.product-card__name a {
+  color: inherit;
+}
+
+.product-card__name a:hover,
+.product-card__name a:focus-visible {
+  color: var(--clr-rose-gold-dark);
+}
+
+.cart-row__media {
+  overflow: hidden;
+}
+
+.cart-row__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-detail {
+  min-height: 60vh;
+}
+
+.product-detail__back {
+  display: inline-flex;
+  margin-bottom: var(--space-lg);
+}
+
+.product-detail__layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+  align-items: center;
+}
+
+.product-detail__media {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--clr-ivory-deep);
+  box-shadow: var(--shadow-md);
+}
+
+.product-detail__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-detail__content {
+  max-width: 560px;
+}
+
+.product-detail__category {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--clr-sage-dark);
+  margin-bottom: var(--space-2xs);
+}
+
+.product-detail__content h1 {
+  margin-bottom: var(--space-sm);
+}
+
+.product-detail__rating {
+  color: var(--clr-gold);
+  font-size: var(--fs-sm);
+}
+
+.product-detail__price {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  margin-block: var(--space-sm);
+}
+
+.product-detail__description {
+  color: var(--clr-text-muted);
+  line-height: var(--lh-relaxed);
+}
+
+.product-detail__benefits {
+  display: grid;
+  gap: var(--space-2xs);
+  margin-block: var(--space-lg);
+  color: var(--clr-text-muted);
+}
+
+.product-detail__benefits li::before {
+  content: "✓";
+  color: var(--clr-sage-dark);
+  margin-right: var(--space-2xs);
+}
+
+.product-detail__missing {
+  max-width: 520px;
+  padding-block: var(--space-3xl);
+}
+
+@media (min-width: 768px) {
+  .product-detail__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+    gap: var(--space-3xl);
+  }
 }

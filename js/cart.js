@@ -22,7 +22,13 @@
     getItems() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : [];
+        const items = raw ? JSON.parse(raw) : [];
+        // Product ids are authoritative: refresh persisted cart display data
+        // from the local catalogue so old/stale image URLs cannot be mixed in.
+        return Array.isArray(items) ? items.map((item) => {
+          const product = window.BeautyPluzProducts?.getById(item.id);
+          return product ? { ...item, name: product.name, price: product.price, image: product.image, icon: product.icon, category: product.category } : item;
+        }) : [];
       } catch (err) {
         console.error("Beauty Pluz: could not read cart from storage", err);
         return [];
@@ -279,9 +285,9 @@
     row.setAttribute("data-cart-row", item.id);
 
     row.innerHTML = `
-      <div class="cart-row__media cart-row__media--${item.icon || "serum"}">
-        ${getIconMarkup(item.icon)}
-      </div>
+      <a class="cart-row__media" href="product.html?id=${encodeURIComponent(item.id)}" aria-label="View ${item.name}">
+        <img src="${item.image}" alt="${item.name}" />
+      </a>
       <div class="cart-row__details">
         <p class="cart-row__category">${item.category || ""}</p>
         <h3 class="cart-row__name">${item.name}</h3>
