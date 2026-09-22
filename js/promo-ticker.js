@@ -17,7 +17,7 @@
   const TICKER_ITEMS = [
     "Free shipping on orders over $75",
     "New products available now",
-    "Shop the Ritual Edit",
+    // "Shop the Ritual Edit",
   ];
 
   /** Builds one <span class="promo-ticker__group"> containing every
