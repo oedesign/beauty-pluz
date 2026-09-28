@@ -267,11 +267,11 @@
     });
   }
 
-  /** Formats a dollar amount using the shared BeautyPluz helper if present. */
+  /** Formats a currency amount using the shared BeautyPluz helper if present. */
   function money(amount) {
     return window.BeautyPluz
       ? window.BeautyPluz.formatCurrency(amount)
-      : "$" + Number(amount).toFixed(2);
+      : "£" + Number(amount).toFixed(2);
   }
 
   /**

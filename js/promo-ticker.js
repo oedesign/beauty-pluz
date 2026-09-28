@@ -15,7 +15,7 @@
   "use strict";
 
   const TICKER_ITEMS = [
-    "Free shipping on orders over $75",
+    "Free shipping on orders over £75",
     "New products available now",
     // "Shop the Ritual Edit",
   ];
