@@ -28,9 +28,9 @@
     /** Format a number as currency. Adjust currency/locale as needed. */
     formatCurrency(amount, currency, locale) {
       const value = Number(amount) || 0;
-      return new Intl.NumberFormat(locale || "en-US", {
+      return new Intl.NumberFormat(locale || "en-GB", {
         style: "currency",
-        currency: currency || "USD",
+        currency: currency || "GBP",
       }).format(value);
     },
 
