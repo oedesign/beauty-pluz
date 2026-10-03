@@ -24,10 +24,10 @@
   const sampleProducts = [
     {
       id: "sp-001",
-      name: "Virgin Hair Fertilizer Cream Enriched With Coconut Oil - 55g",
+      name: "Virgin Hair Fertilizer Cream Enriched With Coconut Oil - 100g",
       category: "",
       price: 7.98,
-      image: "images/products/skincare-product1.jpeg",
+      image: "images/products/Stacked Virgin Hair Fertilizer Boxes.webp",
       description: "Nourish Your Scalp and Elevate Your Hair Care Routine Revitalize your hair care regimen with Virgin Hair Fertilizer Cream. Expertly enriched with nourishing coconut oil, this 125g conditioning treatment is designed to provide deep moisture, support scalp comfort, and keep your hair looking smooth, soft, and manageable every single day. Crafted for all hair types, it absorbs effortlessly to condition strands from root to tip. Incorporate this trusted formula into your regular routine to maintain a healthy-looking shine and silky texture effortlessly. Directions for Use Take a small amount of the hair fertilizer cream onto your fingertips.",
       badge: "bestseller",
       icon: "balm",
@@ -135,7 +135,7 @@
       name: "Mouldin Gel Wax",
       category: "cleanser",
       price: 5.8,
-      image: "images/products/skincare-product9.jpeg",
+      image: "images/products/Styling Gel Wax Product Jar.webp",
       description: "Moulding gel wax is a hybrid hair-styling product that combines the firm hold of a wax with the lightweight flexibility and slick finish of a gel. Enriched with tea tree oil and glycerin to moisturize and condition the scalp. With regular use, hair will maintain a naturally healthy shine.",
       badge: "",
       icon: "cream",
