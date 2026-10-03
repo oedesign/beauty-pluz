@@ -239,7 +239,7 @@
     const form = BeautyPluz.qs("#contact-form");
     if (!form) return;
 
-    const WHATSAPP_NUMBER = "10000000000"; // same number used across the site
+    const WHATSAPP_NUMBER = "+447823894470"; // same number used across the site
 
     const fields = {
       name: { input: form.querySelector("#contact-name"), required: true, label: "your name" },
