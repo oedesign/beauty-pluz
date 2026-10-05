@@ -97,7 +97,7 @@
     {
       id: "sp-007",
       name: "WILD GROWTH Natural Hair Growth Oil - 4 FL OZ",
-      category: "serum",
+      category: "",
       price: 15.99,
       image: "images/products/beautypluz-product-17.webp",
       description: "Wild Growth Hair Oil consists of an uncompromisingly rich plant based formula that hydrates, conditions and softens for more manageable hair. Dry, tangled and hard to manage hair will become soft, healthy and less prone to split ends and hair breakage. The hair oil promotes strong, thick hair growth for all hair types. Wild Growth Hair Oil will keep your tresses healthy from root to tip by conditioning the scalp and this will lead to longer, fuller hair that grows. Turn dry, tangled and hard to manage hair into softer, healthier hair without split ends and reduced breakage. ",
@@ -109,7 +109,7 @@
     {
       id: "sp-008",
       name: "Anti itch Spray ",
-      category: "exfoliant",
+      category: "",
       price: 4.99,
       image: "images/products/beautypluz-product-15.webp",
       description: "Nature Field Miracle Natural Oil is a multi-purpose beauty elixir formulated with a powerful blend of 12 natural oilsto deeply nourish, repair, and protect both hair and skin. Enriched with argan oil, coconut oil, jojoba oil, and castor oil, this lightweight yet deeply hydrating formula restores moisture, shine, and strength, making it perfect for dry, damaged, or frizzy hair and dull, dehydrated skin. Natural Oils Blend – A unique mix of argan, coconut, jojoba, castor, avocado, almond, and more for deep hydration and repair. Intense Hair Nourishment – Helps reduce frizz, split ends, and breakage, leaving hair silky, shiny, and healthy. Skin Hydration & Glow – Locks in moisture, soothes dryness, and promotes radiant, soft skin. Lightweight & Non-Greasy – Absorbs quickly without leaving residue. Versatile Beauty Oil – Ideal for hair, scalp, face, body, nails, and cuticles. How to Use: For Hair: Apply a few drops to damp or dry hair, focusing on ends and frizz-prone areas. For Skin: Massage onto clean skin for deep hydration and a natural glow. Nature Field 12-in-1 Miracle Natural Oil – The Power of 12 Oils in One Bottle for Complete Beauty Care!",
@@ -133,7 +133,7 @@
     {
       id: "sp-010",
       name: "Mouldin Gel Wax",
-      category: "cleanser",
+      category: "",
       price: 5.8,
       image: "images/products/Styling Gel Wax Product Jar.webp",
       description: "Moulding gel wax is a hybrid hair-styling product that combines the firm hold of a wax with the lightweight flexibility and slick finish of a gel. Enriched with tea tree oil and glycerin to moisturize and condition the scalp. With regular use, hair will maintain a naturally healthy shine.",
