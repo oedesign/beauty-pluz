@@ -14,6 +14,23 @@
 (function () {
   "use strict";
 
+  import("./storefront-settings.js").then(({ loadPublishedStoreSettings }) => {
+    loadPublishedStoreSettings()
+      .then((settings) => {
+        if (Array.isArray(settings?.promotionalMessages)) {
+          window.BEAUTY_PLUZ_TICKER_ITEMS = settings.promotionalMessages.map((item) => ({
+            message: item.message,
+            code: item.code || "",
+          }));
+        }
+        initPromoTicker();
+      })
+      .catch((error) => {
+        console.error("Beauty Pluz: could not load promotional ticker settings.", error);
+        initPromoTicker();
+      });
+  });
+
   const TICKER_ITEMS = [
     "Free shipping on orders over £75",
     "New products available now",
@@ -25,8 +42,19 @@
       so the CSS animation can move exactly one group-width (-50%)
       and loop with no visible seam. */
   function buildGroupMarkup() {
-    return TICKER_ITEMS.map(
-      (text) => `<span class="promo-ticker__item">${text}</span>`
+    const configured = window.BEAUTY_PLUZ_TICKER_ITEMS;
+    const items = Array.isArray(configured)
+      ? configured
+      : TICKER_ITEMS.map((message) => ({ message, code: "" }));
+    const safeText = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[character]);
+    return items.map(
+      (item) => `<span class="promo-ticker__item">${safeText(item.message)}${item.code ? ` · Code: ${safeText(item.code)}` : ""}</span>`
     ).join("");
   }
 
@@ -34,6 +62,15 @@
     const track = document.querySelector("[data-ticker-track]");
     if (!track) return;
 
+    const configured = window.BEAUTY_PLUZ_TICKER_ITEMS;
+    if (Array.isArray(configured) && configured.length === 0) {
+      const ticker = track.closest(".promo-ticker");
+      if (ticker) ticker.hidden = true;
+      return;
+    }
+
+    const ticker = track.closest(".promo-ticker");
+    if (ticker) ticker.hidden = false;
     const groupMarkup = buildGroupMarkup();
 
     // Render as an accessible, single announcement (group 1) plus a

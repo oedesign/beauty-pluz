@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Products — Beauty Pluz Admin</title>
+  <link rel="icon" type="image/webp" href="../images/beautypluz-logo.webp" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body admin-body--dashboard">
+  <p class="admin-status admin-status--gate" data-admin-status role="status" aria-live="polite">Verifying administrator access…</p>
+
+  <div class="admin-layout" data-admin-app hidden>
+    <aside class="admin-sidebar">
+      <a class="admin-brand admin-brand--sidebar" href="../index.html">
+        <img src="../images/beautypluz-logo.webp" alt="" />
+        <span>Beauty Pluz</span>
+      </a>
+      <p class="admin-sidebar__label">Administration</p>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <a href="/admin/index.html">Overview</a>
+        <a class="is-current" href="/admin/products.html" aria-current="page">Products</a>
+        <a href="/admin/inventory.html">Inventory</a>
+        <a href="/admin/orders.html">Orders</a>
+        <a href="/admin/homepage.html">Homepage</a>
+        <a href="/admin/settings.html">Store settings</a>
+      </nav>
+      <a class="admin-back-link admin-back-link--sidebar" href="../index.html">← View storefront</a>
+    </aside>
+
+    <main class="admin-main admin-products">
+      <header class="admin-topbar">
+        <div>
+          <p class="admin-eyebrow">Catalogue</p>
+          <h1>Products</h1>
+        </div>
+        <div class="admin-account">
+          <span data-admin-email></span>
+          <button class="admin-button admin-button--quiet" type="button" data-admin-logout>Sign out</button>
+        </div>
+      </header>
+
+      <p class="admin-status" data-products-status role="status" aria-live="polite" hidden></p>
+
+      <section class="product-manager" aria-label="Product catalogue management">
+        <div class="product-manager__toolbar">
+          <label class="admin-search">
+            <span class="visually-hidden">Search products</span>
+            <input type="search" data-product-search placeholder="Search name, category, or ID" />
+          </label>
+          <select data-product-category aria-label="Filter by category">
+            <option value="">All categories</option>
+          </select>
+          <select data-product-availability aria-label="Filter by availability">
+            <option value="">All availability</option>
+            <option value="available">Available</option>
+            <option value="unavailable">Unavailable</option>
+            <option value="out-of-stock">Out of stock</option>
+          </select>
+          <select data-product-sort aria-label="Sort products">
+            <option value="name">Name A–Z</option>
+            <option value="newest">Newest</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="stock-asc">Stock: low to high</option>
+          </select>
+          <button class="admin-button" type="button" data-product-add>＋ Add product</button>
+        </div>
+        <div class="product-manager__count" data-product-count></div>
+        <div class="product-table-wrap" aria-busy="true" data-products-table-wrap>
+          <table class="product-table">
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Category</th>
+                <th scope="col">Price</th>
+                <th scope="col">Stock</th>
+                <th scope="col">Storefront</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody data-product-rows></tbody>
+          </table>
+          <p class="product-table__empty" data-product-empty hidden>No products match those filters.</p>
+        </div>
+        <nav class="admin-pagination" aria-label="Product pages">
+          <button class="admin-button admin-button--quiet" type="button" data-product-previous disabled>Previous</button>
+          <span data-product-page aria-live="polite">Page 1 of 1</span>
+          <button class="admin-button admin-button--quiet" type="button" data-product-next disabled>Next</button>
+        </nav>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="product-dialog" data-product-dialog aria-labelledby="product-dialog-title">
+    <form class="product-form" data-product-form>
+      <header class="product-form__header">
+        <div>
+          <p class="admin-eyebrow">Catalogue record</p>
+          <h2 id="product-dialog-title" data-product-dialog-title>Add product</h2>
+        </div>
+        <button class="product-dialog__close" type="button" data-product-close aria-label="Close editor">×</button>
+      </header>
+      <input type="hidden" name="id" />
+
+      <div class="product-form__grid">
+        <label class="product-form__field product-form__field--wide">
+          <span>Product name</span>
+          <input name="name" maxlength="180" required />
+        </label>
+        <label class="product-form__field">
+          <span>Category</span>
+          <input name="category" list="product-category-options" maxlength="80" required />
+          <datalist id="product-category-options"></datalist>
+        </label>
+        <label class="product-form__field">
+          <span>Badge</span>
+          <select name="badge">
+            <option value="">None</option>
+            <option value="new">New arrival</option>
+            <option value="bestseller">Bestseller</option>
+          </select>
+        </label>
+        <label class="product-form__field">
+          <span>Price (£)</span>
+          <input name="price" type="number" min="0" step="0.01" required />
+        </label>
+        <label class="product-form__field">
+          <span>Sale price (£, optional)</span>
+          <input name="sale_price" type="number" min="0" step="0.01" />
+        </label>
+        <label class="product-form__field">
+          <span>Stock quantity</span>
+          <input name="stock_quantity" type="number" min="0" step="1" value="0" required />
+        </label>
+        <label class="product-form__field">
+          <span>Card icon</span>
+          <select name="icon">
+            <option value="balm">Balm</option>
+            <option value="serum">Serum</option>
+            <option value="cream">Cream</option>
+            <option value="oil">Oil</option>
+            <option value="mist">Mist</option>
+            <option value="mask">Mask</option>
+            <option value="spf">Sun care</option>
+          </select>
+        </label>
+        <label class="product-form__field product-form__field--wide">
+          <span>Description</span>
+          <textarea name="description" rows="5" maxlength="5000"></textarea>
+        </label>
+        <div class="product-image-field product-form__field--wide">
+          <label class="product-form__field">
+            <span>Product image (JPEG, PNG, or WebP; max 5 MB)</span>
+            <input name="image" type="file" accept="image/jpeg,image/png,image/webp" />
+          </label>
+          <div class="product-image-preview" data-product-image-preview hidden>
+            <img data-product-image-preview-img alt="Product image preview" />
+            <button class="admin-button admin-button--quiet" type="button" data-product-remove-image>Remove image</button>
+          </div>
+        </div>
+        <label class="product-form__check">
+          <input name="is_available" type="checkbox" checked />
+          <span>Available for purchase</span>
+        </label>
+        <label class="product-form__check">
+          <input name="is_published" type="checkbox" checked />
+          <span>Published in the shop</span>
+        </label>
+        <label class="product-form__check">
+          <input name="is_featured" type="checkbox" />
+          <span>Feature on homepage</span>
+        </label>
+      </div>
+
+      <p class="admin-status" data-product-form-status role="status" aria-live="polite" hidden></p>
+      <footer class="product-form__footer">
+        <button class="admin-button admin-button--quiet" type="button" data-product-cancel>Cancel</button>
+        <button class="admin-button" type="submit" data-product-save>Save product</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <script src="../js/backend-config.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="products.js"></script>
+</body>
+</html>

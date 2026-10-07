@@ -23,17 +23,17 @@
 
   <!-- <a class="skip-link" href="#main-content">Skip to content</a> -->
 
-  <!-- <div class="announcement-bar" id="announcement-bar">
-    <div class="container announcement-bar__inner"> -->
-      <!-- <p class="announcement-bar__text">Free shipping on orders over $75 · New: The Ritual Edit is here</p> -->
-      <!-- <button type="button" class="announcement-bar__close" aria-label="Dismiss announcement">
+  <div class="announcement-bar" id="announcement-bar" data-announcement-bar hidden>
+    <div class="container announcement-bar__inner">
+      <p class="announcement-bar__text" data-announcement-text></p>
+      <button type="button" class="announcement-bar__close" data-announcement-close aria-label="Dismiss announcement">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
       </button>
     </div>
-  </div> -->
+  </div>
 
   <header class="site-header">
     <div class="container">
@@ -107,8 +107,8 @@
   <main id="main-content">
 
     <!-- ===================== HERO CAROUSEL ===================== -->
-    <!-- Slide content lives in js/hero-carousel.js (see the SLIDES
-         array there) — this markup is just the shell: an empty
+    <!-- Slide content comes from published homepage data, with local
+         fallback slides — this markup is the shell: an empty
          track, arrow buttons, and a dots container, all populated
          and wired up by that script. -->
     <section
@@ -247,7 +247,7 @@
           </a>
         </div>
 
-        <div class="product-grid reveal-stagger">
+        <div class="product-grid reveal-stagger" data-home-products="featured">
 
           <article class="product-card card" data-product-id="sp-001">
             <div class="product-card__media product-card__media--balm">
@@ -467,7 +467,7 @@
           </a>
         </div>
 
-        <div class="product-grid reveal-stagger">
+        <div class="product-grid reveal-stagger" data-home-products="new">
 
           <article class="product-card card" data-product-id="sp-002">
             <div class="product-card__media product-card__media--serum">
@@ -573,20 +573,7 @@
     <!-- ================ ABOUT PREVIEW ================ -->
    
 
-    <!-- ================ PROMOTIONAL BANNER ================ -->
-    <!-- <section class="promo-banner" aria-labelledby="promo-banner-heading">
-      <div class="promo-banner__shape promo-banner__shape--one" aria-hidden="true"></div>
-      <div class="promo-banner__shape promo-banner__shape--two" aria-hidden="true"></div>
-      <div class="container promo-banner__inner reveal">
-        <span class="eyebrow eyebrow--on-dark">Limited Time</span>
-        <h2 id="promo-banner-heading">Your First Ritual, On Us</h2>
-        <p>Take 15% off your first order — consider it an introduction.</p>
-        <div class="promo-banner__actions">
-          <code class="promo-banner__code">WELCOME15</code>
-          <a href="shop.html" class="btn btn--light">Shop Now</a>
-        </div>
-      </div>
-    </section> -->
+    <div data-home-promotions></div>
 
     <!-- ================ TESTIMONIALS ================ -->
     <section class="section section--surface testimonials" aria-labelledby="testimonials-heading">
@@ -767,11 +754,14 @@
     </svg>
   </button>
 
+  <script src="js/backend-config.js"></script>
   <script src="js/main.js?v=20260713" defer></script>
   <script src="js/menu.js?v=20260713" defer></script>
   <script src="js/cart.js?v=20260713" defer></script>
-  <script src="js/products.js?v=20260713" defer></script>
-  <script src="js/promo-ticker.js?v=20260713" defer></script>
-  <script src="js/hero-carousel.js?v=20260713" defer></script>
+  <script type="module" src="js/products.js?v=20261007"></script>
+  <script type="module" src="js/storefront-settings.js?v=20261007"></script>
+  <script type="module" src="js/home-content.js?v=20261007"></script>
+  <script type="module" src="js/promo-ticker.js?v=20261007"></script>
+  <script type="module" src="js/hero-carousel.js?v=20261007"></script>
 </body>
 </html>

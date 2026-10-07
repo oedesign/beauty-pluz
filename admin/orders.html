@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Orders — Beauty Pluz Admin</title>
+  <link rel="icon" type="image/webp" href="../images/beautypluz-logo.webp" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body admin-body--dashboard">
+  <p class="admin-status admin-status--gate" data-admin-status role="status" aria-live="polite">Verifying administrator access…</p>
+
+  <div class="admin-layout" data-admin-app hidden>
+    <aside class="admin-sidebar">
+      <a class="admin-brand admin-brand--sidebar" href="../index.html">
+        <img src="../images/beautypluz-logo.webp" alt="" />
+        <span>Beauty Pluz</span>
+      </a>
+      <p class="admin-sidebar__label">Administration</p>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <a href="/admin/index.html">Overview</a>
+        <a href="/admin/products.html">Products</a>
+        <a href="/admin/inventory.html">Inventory</a>
+        <a class="is-current" href="/admin/orders.html" aria-current="page">Orders</a>
+        <a href="/admin/homepage.html">Homepage</a>
+        <a href="/admin/settings.html">Store settings</a>
+      </nav>
+      <a class="admin-back-link admin-back-link--sidebar" href="../index.html">← View storefront</a>
+    </aside>
+
+    <main class="admin-main admin-orders">
+      <header class="admin-topbar">
+        <div>
+          <p class="admin-eyebrow">Sales &amp; fulfilment</p>
+          <h1>Orders</h1>
+        </div>
+        <div class="admin-account">
+          <span data-admin-email></span>
+          <button class="admin-button admin-button--quiet" type="button" data-admin-logout>Sign out</button>
+        </div>
+      </header>
+
+      <aside class="admin-notice" role="note">
+        <strong>Order capture and payments are not connected yet.</strong>
+        <span>Checkout currently opens WhatsApp and does not save orders here. This screen only lists orders written by a trusted checkout integration. Payment status and references are read-only; no payment is marked paid without verified provider data.</span>
+      </aside>
+
+      <p class="admin-status" data-orders-status role="status" aria-live="polite" hidden></p>
+
+      <section class="orders-manager" aria-label="Order history">
+        <div class="orders-toolbar">
+          <label class="admin-search">
+            <span class="visually-hidden">Search orders</span>
+            <input type="search" data-order-search placeholder="Search order ID, customer, email, or phone" />
+          </label>
+          <select data-order-status-filter aria-label="Filter by fulfilment status">
+            <option value="">All fulfilment statuses</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button class="admin-button admin-button--quiet" type="button" data-orders-refresh>Refresh</button>
+        </div>
+        <p class="product-manager__count" data-orders-count></p>
+        <div class="product-table-wrap">
+          <table class="product-table orders-table">
+            <thead>
+              <tr>
+                <th scope="col">Order</th>
+                <th scope="col">Customer</th>
+                <th scope="col">Items</th>
+                <th scope="col">Total</th>
+                <th scope="col">Fulfilment</th>
+                <th scope="col">Payment</th>
+                <th scope="col"><span class="visually-hidden">Details</span></th>
+              </tr>
+            </thead>
+            <tbody data-order-rows></tbody>
+          </table>
+          <p class="product-table__empty" data-orders-empty hidden>No recorded orders match this search. WhatsApp checkout orders are not stored in the order database.</p>
+        </div>
+        <div class="orders-pagination">
+          <button class="admin-button admin-button--quiet" type="button" data-orders-previous disabled>Previous</button>
+          <span data-orders-page></span>
+          <button class="admin-button admin-button--quiet" type="button" data-orders-next disabled>Next</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="product-dialog order-dialog" data-order-dialog aria-labelledby="order-dialog-title">
+    <div class="order-dialog__content">
+      <header class="product-form__header">
+        <div>
+          <p class="admin-eyebrow">Recorded order</p>
+          <h2 id="order-dialog-title" data-order-dialog-title>Order details</h2>
+        </div>
+        <button class="product-dialog__close" type="button" data-order-close aria-label="Close order details">×</button>
+      </header>
+      <p class="admin-status" data-order-detail-status role="status" aria-live="polite" hidden></p>
+      <div data-order-detail-content></div>
+    </div>
+  </dialog>
+
+  <script src="../js/backend-config.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="orders.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Store Settings — Beauty Pluz Admin</title>
+  <link rel="icon" type="image/webp" href="../images/beautypluz-logo.webp" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body admin-body--dashboard">
+  <p class="admin-status admin-status--gate" data-admin-status role="status" aria-live="polite">Verifying administrator access…</p>
+
+  <div class="admin-layout" data-admin-app hidden>
+    <aside class="admin-sidebar">
+      <a class="admin-brand admin-brand--sidebar" href="../index.html">
+        <img src="../images/beautypluz-logo.webp" alt="" />
+        <span>Beauty Pluz</span>
+      </a>
+      <p class="admin-sidebar__label">Administration</p>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <a href="/admin/index.html">Overview</a>
+        <a href="/admin/products.html">Products</a>
+        <a href="/admin/inventory.html">Inventory</a>
+        <a href="/admin/orders.html">Orders</a>
+        <a href="/admin/homepage.html">Homepage</a>
+        <a class="is-current" href="/admin/settings.html" aria-current="page">Store settings</a>
+      </nav>
+      <a class="admin-back-link admin-back-link--sidebar" href="../index.html">← View storefront</a>
+    </aside>
+
+    <main class="admin-main admin-settings">
+      <header class="admin-topbar">
+        <div>
+          <p class="admin-eyebrow">Storefront identity &amp; information</p>
+          <h1>Store settings</h1>
+        </div>
+        <div class="admin-account">
+          <span data-admin-email></span>
+          <button class="admin-button admin-button--quiet" type="button" data-admin-logout>Sign out</button>
+        </div>
+      </header>
+
+      <p class="admin-status" data-settings-status role="status" aria-live="polite" hidden></p>
+      <div class="admin-notice" role="note">
+        <strong>Display settings only</strong>
+        <span>Promotional codes are shown as copy and are not applied to checkout. Shipping information is informational only. Currency remains GBP because product prices and cart calculations currently use GBP; no tax, shipping, or payment rules are changed here.</span>
+      </div>
+
+      <form data-settings-form>
+        <section class="homepage-panel" aria-labelledby="identity-heading">
+          <div class="homepage-panel__heading">
+            <div><p class="admin-eyebrow">Brand</p><h2 id="identity-heading">Store identity</h2></div>
+          </div>
+          <div class="settings-fields">
+            <label class="product-form__field"><span>Store name</span><input name="storeName" maxlength="100" required></label>
+            <label class="product-form__field"><span>Logo image (JPEG, PNG, or WebP; max 2 MB)</span><input name="logoFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
+            <div class="settings-logo-preview">
+              <img data-settings-logo-preview src="../images/beautypluz-logo.webp" alt="Current store logo preview">
+              <button class="admin-button admin-button--quiet" type="button" data-settings-remove-logo>Restore the original logo</button>
+            </div>
+            <input name="logo" type="hidden">
+          </div>
+        </section>
+
+        <section class="homepage-panel" aria-labelledby="contact-settings-heading">
+          <div class="homepage-panel__heading">
+            <div><p class="admin-eyebrow">Customer service</p><h2 id="contact-settings-heading">Contact information</h2></div>
+          </div>
+          <div class="settings-fields settings-fields--three">
+            <label class="product-form__field"><span>Customer email</span><input name="email" type="email" maxlength="254" autocomplete="email"></label>
+            <label class="product-form__field"><span>Phone number</span><input name="phone" type="tel" maxlength="40" autocomplete="tel"></label>
+            <label class="product-form__field"><span>WhatsApp number</span><input name="whatsapp" type="tel" maxlength="40" placeholder="+447123456789"></label>
+            <label class="product-form__field"><span>Business hours</span><textarea name="businessHours" maxlength="500" rows="3" placeholder="Monday – Friday: 9am – 6pm"></textarea></label>
+            <label class="product-form__field"><span>Business address</span><textarea name="address" maxlength="500" rows="3"></textarea></label>
+          </div>
+        </section>
+
+        <section class="homepage-panel" aria-labelledby="social-settings-heading">
+          <div class="homepage-panel__heading">
+            <div><p class="admin-eyebrow">Community</p><h2 id="social-settings-heading">Social media links</h2></div>
+          </div>
+          <div class="settings-fields settings-fields--three">
+            <label class="product-form__field"><span>Instagram URL</span><input name="instagram" type="url" maxlength="500" placeholder="https://instagram.com/your-store"></label>
+            <label class="product-form__field"><span>Facebook URL</span><input name="facebook" type="url" maxlength="500" placeholder="https://facebook.com/your-store"></label>
+            <label class="product-form__field"><span>TikTok URL</span><input name="tiktok" type="url" maxlength="500" placeholder="https://tiktok.com/@your-store"></label>
+            <label class="product-form__field"><span>YouTube URL</span><input name="youtube" type="url" maxlength="500" placeholder="https://youtube.com/@your-store"></label>
+            <label class="product-form__field"><span>X URL</span><input name="x" type="url" maxlength="500" placeholder="https://x.com/your-store"></label>
+          </div>
+        </section>
+
+        <section class="homepage-panel" aria-labelledby="shipping-settings-heading">
+          <div class="homepage-panel__heading">
+            <div><p class="admin-eyebrow">Informational content</p><h2 id="shipping-settings-heading">Shipping &amp; delivery information</h2><p class="homepage-panel__hint">This text is displayed on the Contact page. It does not configure delivery availability, fees, thresholds, or estimates in checkout.</p></div>
+          </div>
+          <label class="product-form__field"><span>Customer-facing information</span><textarea name="shippingInfo" maxlength="2000" rows="5" placeholder="Write current delivery guidance for customers."></textarea></label>
+        </section>
+
+        <section class="homepage-panel" aria-labelledby="promotional-messages-heading">
+          <div class="homepage-panel__heading">
+            <div><p class="admin-eyebrow">Storefront ticker</p><h2 id="promotional-messages-heading">Promotional messages &amp; codes</h2><p class="homepage-panel__hint">Ticker messages and codes are display-only content. Codes are not validated or applied by the current WhatsApp checkout.</p></div>
+            <button class="admin-button" type="button" data-settings-add-promo>Add message</button>
+          </div>
+          <div class="homepage-card-list" data-settings-promo-list></div>
+        </section>
+
+        <section class="homepage-panel" aria-labelledby="footer-settings-heading">
+          <div class="homepage-panel__heading">
+            <div><p class="admin-eyebrow">Storefront footer</p><h2 id="footer-settings-heading">Footer content &amp; informational links</h2><p class="homepage-panel__hint">Links can point to existing same-site pages or secure external pages. Privacy, terms, and standalone shipping policy pages are not currently implemented; adding a link does not create policy content.</p></div>
+            <button class="admin-button" type="button" data-settings-add-link>Add link</button>
+          </div>
+          <label class="product-form__field settings-footer-description"><span>Footer description</span><textarea name="footerDescription" maxlength="500" rows="3"></textarea></label>
+          <div class="homepage-card-list" data-settings-link-list></div>
+        </section>
+
+        <section class="homepage-panel" aria-labelledby="currency-settings-heading">
+          <div class="homepage-panel__heading">
+            <div><p class="admin-eyebrow">Display format</p><h2 id="currency-settings-heading">Currency</h2><p class="homepage-panel__hint">Currency switching and conversion are not implemented. Product prices, cart totals, and order displays are GBP.</p></div>
+          </div>
+          <label class="product-form__field settings-currency"><span>Store currency</span><select name="currency" disabled><option value="GBP">GBP — British Pound (£)</option></select></label>
+        </section>
+
+        <div class="settings-save-bar">
+          <span>Saving publishes these display settings for storefront visitors.</span>
+          <button class="admin-button" type="submit" data-settings-save>Save store settings</button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script src="../js/backend-config.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="settings.js"></script>
+</body>
+</html>

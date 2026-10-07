@@ -12,6 +12,12 @@
 
   const STORAGE_KEY = "beautyPluzCart";
 
+  function currentPrice(product) {
+    return product.sale_price === null || product.sale_price === undefined
+      ? product.price
+      : product.sale_price;
+  }
+
   /**
    * Cart item shape:
    * { id, name, price, image, quantity }
@@ -25,9 +31,24 @@
         const items = raw ? JSON.parse(raw) : [];
         // Product ids are authoritative: refresh persisted cart display data
         // from the local catalogue so old/stale image URLs cannot be mixed in.
-        return Array.isArray(items) ? items.map((item) => {
+        return Array.isArray(items) ? items.flatMap((item) => {
           const product = window.BeautyPluzProducts?.getById(item.id);
-          return product ? { ...item, name: product.name, price: product.price, image: product.image, icon: product.icon, category: product.category } : item;
+          if (!product || !product.is_available || product.stock_quantity === 0) return [];
+          const quantity = product.stock_quantity === null
+            ? item.quantity
+            : Math.min(item.quantity, product.stock_quantity);
+          return quantity > 0 ? [{
+            ...item,
+            quantity,
+            name: product.name,
+            price: currentPrice(product),
+            image: product.image,
+            icon: product.icon,
+            category: product.category,
+            sale_price: product.sale_price,
+            is_available: product.is_available,
+            stock_quantity: product.stock_quantity,
+          }] : [];
         }) : [];
       } catch (err) {
         console.error("Beauty Pluz: could not read cart from storage", err);
@@ -45,21 +66,28 @@
     },
 
     addItem(product, quantity) {
-      const qty = quantity && quantity > 0 ? quantity : 1;
+      if (!product.is_available || product.stock_quantity === 0) return this.getItems();
+      const requestedQty = quantity && quantity > 0 ? quantity : 1;
       const items = this.getItems();
       const existing = items.find((item) => item.id === product.id);
+      const currentQuantity = existing ? existing.quantity : 0;
+      const availableQty = product.stock_quantity === null
+        ? requestedQty
+        : Math.min(requestedQty, Math.max(product.stock_quantity - currentQuantity, 0));
+      if (availableQty === 0) return items;
 
       if (existing) {
-        existing.quantity += qty;
+        existing.quantity += availableQty;
       } else {
         items.push({
           id: product.id,
           name: product.name,
-          price: product.price,
+          price: currentPrice(product),
+          sale_price: product.sale_price,
           image: product.image || "",
           icon: product.icon || "",
           category: product.category || "",
-          quantity: qty,
+          quantity: availableQty,
         });
       }
 
@@ -73,7 +101,13 @@
         items = items.filter((item) => item.id !== id);
       } else {
         const target = items.find((item) => item.id === id);
-        if (target) target.quantity = quantity;
+        const product = window.BeautyPluzProducts?.getById(id);
+        if (target) {
+          target.quantity = product?.stock_quantity === null || product?.stock_quantity === undefined
+            ? quantity
+            : Math.min(quantity, product.stock_quantity);
+          if (target.quantity === 0) items = items.filter((item) => item.id !== id);
+        }
       }
       this._save(items);
       return items;
@@ -143,7 +177,12 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", refreshCartBadge);
+  document.addEventListener("DOMContentLoaded", () => {
+    refreshCartBadge();
+    window.BeautyPluzProducts?.ready
+      .then(refreshCartBadge)
+      .catch((err) => console.error("Beauty Pluz: cart badge could not refresh from the catalogue", err));
+  });
   Cart.onChange(refreshCartBadge);
 
   /* =========================================================
@@ -255,7 +294,8 @@
       if (errorEl) errorEl.hidden = true;
 
       const message = buildWhatsAppMessage(items, customer);
-      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+      const recipient = String(window.BEAUTY_PLUZ_WHATSAPP_NUMBER || WHATSAPP_NUMBER).replace(/\D/g, "");
+      const url = `https://wa.me/${recipient}?text=${encodeURIComponent(message)}`;
       window.open(url, "_blank", "noopener,noreferrer");
     });
 
@@ -353,9 +393,18 @@
 
   function initCartPage() {
     if (!document.querySelector("[data-cart-list]")) return;
-    renderCartPage();
-    Cart.onChange(renderCartPage);
-    initWhatsAppOrder();
+    Promise.resolve(window.BeautyPluzProducts?.ready)
+      .then(() => {
+        renderCartPage();
+        refreshCartBadge();
+        Cart.onChange(renderCartPage);
+        initWhatsAppOrder();
+      })
+      .catch((err) => {
+        console.error("Beauty Pluz: could not load product information for the cart", err);
+        const list = document.querySelector("[data-cart-list]");
+        if (list) list.textContent = "We could not load your cart right now. Please refresh the page or try again later.";
+      });
   }
 
   document.addEventListener("DOMContentLoaded", initCartPage);

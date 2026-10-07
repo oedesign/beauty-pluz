@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Inventory — Beauty Pluz Admin</title>
+  <link rel="icon" type="image/webp" href="../images/beautypluz-logo.webp" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body admin-body--dashboard">
+  <p class="admin-status admin-status--gate" data-admin-status role="status" aria-live="polite">Verifying administrator access…</p>
+
+  <div class="admin-layout" data-admin-app hidden>
+    <aside class="admin-sidebar">
+      <a class="admin-brand admin-brand--sidebar" href="../index.html">
+        <img src="../images/beautypluz-logo.webp" alt="" />
+        <span>Beauty Pluz</span>
+      </a>
+      <p class="admin-sidebar__label">Administration</p>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <a href="/admin/index.html">Overview</a>
+        <a href="/admin/products.html">Products</a>
+        <a class="is-current" href="/admin/inventory.html" aria-current="page">Inventory</a>
+        <a href="/admin/orders.html">Orders</a>
+        <a href="/admin/homepage.html">Homepage</a>
+        <a href="/admin/settings.html">Store settings</a>
+      </nav>
+      <a class="admin-back-link admin-back-link--sidebar" href="../index.html">← View storefront</a>
+    </aside>
+
+    <main class="admin-main admin-inventory">
+      <header class="admin-topbar">
+        <div>
+          <p class="admin-eyebrow">Stock control</p>
+          <h1>Inventory</h1>
+        </div>
+        <div class="admin-account">
+          <span data-admin-email></span>
+          <button class="admin-button admin-button--quiet" type="button" data-admin-logout>Sign out</button>
+        </div>
+      </header>
+
+      <div class="inventory-summary" data-inventory-summary aria-busy="true">
+        <article><span>Products tracked</span><strong>—</strong></article>
+        <article><span>Low stock · 5 or fewer</span><strong>—</strong></article>
+        <article><span>Out of stock</span><strong>—</strong></article>
+        <article><span>Not tracked</span><strong>—</strong></article>
+      </div>
+      <p class="admin-status" data-inventory-status role="status" aria-live="polite" hidden></p>
+
+      <section class="inventory-manager" aria-label="Product stock levels">
+        <p class="homepage-panel__hint">Low stock is five units or fewer. Save a whole number to track stock; leave the quantity blank to mark a product as not tracked. Stock changes are protected by an administrator-only backend operation.</p>
+        <div class="inventory-toolbar">
+          <label class="admin-search">
+            <span class="visually-hidden">Search inventory</span>
+            <input type="search" data-inventory-search placeholder="Search product, category, or ID" />
+          </label>
+          <select data-inventory-filter aria-label="Filter inventory">
+            <option value="">All stock levels</option>
+            <option value="low">Low stock (5 or fewer)</option>
+            <option value="out">Out of stock</option>
+            <option value="untracked">Not tracked</option>
+          </select>
+          <button class="admin-button admin-button--quiet" type="button" data-inventory-refresh>Refresh</button>
+        </div>
+        <p class="product-manager__count" data-inventory-count></p>
+        <div class="product-table-wrap" aria-busy="true" data-inventory-table-wrap>
+          <table class="product-table inventory-table">
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Category</th>
+                <th scope="col">Storefront</th>
+                <th scope="col">Stock quantity</th>
+                <th scope="col"><span class="visually-hidden">Update</span></th>
+              </tr>
+            </thead>
+            <tbody data-inventory-rows></tbody>
+          </table>
+          <p class="product-table__empty" data-inventory-empty hidden>No products match this filter.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/backend-config.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="inventory.js"></script>
+</body>
+</html>

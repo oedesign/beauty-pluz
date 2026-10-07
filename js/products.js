@@ -1,3 +1,5 @@
+import { publicSupabase } from "./public-supabase.js";
+
 /* =========================================================
    BEAUTY PLUZ — PRODUCTS.JS
    Product catalogue data plus the interaction layer for any
@@ -185,28 +187,64 @@
     spf: '<circle cx="12" cy="12" r="4.5"></circle><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>',
   };
 
+  function mapProduct(row) {
+    return {
+      id: row.id,
+      name: row.name,
+      category: row.category || "uncategorized",
+      price: Number(row.price),
+      sale_price: row.sale_price === null || row.sale_price === undefined ? null : Number(row.sale_price),
+      image: row.image_url || row.image || "",
+      image_url: row.image_url || row.image || "",
+      description: row.description || "",
+      badge: row.badge || "",
+      icon: row.icon || "balm",
+      rating: Number(row.rating || 0),
+      reviewCount: Number(row.review_count ?? row.reviewCount ?? 0),
+      stock_quantity: row.stock_quantity === null || row.stock_quantity === undefined
+        ? null
+        : Number(row.stock_quantity),
+      is_available: row.is_available !== false,
+      is_published: row.is_published !== false,
+      is_featured: row.is_featured ?? row.badge === "bestseller",
+      created_at: row.created_at || "",
+    };
+  }
+
+  let catalogue = sampleProducts.map(mapProduct);
+  async function loadCatalogue() {
+    if (!publicSupabase) return catalogue;
+
+    const { data, error } = await publicSupabase.from("products").select("*").order("created_at", { ascending: false });
+    if (error) throw error;
+    catalogue = (data || []).map(mapProduct);
+    return catalogue;
+  }
+
   const Products = {
+    ready: loadCatalogue(),
+
     getAll() {
-      return sampleProducts;
+      return catalogue;
     },
 
     getById(id) {
-      return sampleProducts.find((product) => product.id === id) || null;
+      return catalogue.find((product) => product.id === id) || null;
     },
 
     getByCategory(category) {
-      if (!category || category === "all") return sampleProducts;
-      return sampleProducts.filter((product) => product.category === category);
+      if (!category || category === "all") return catalogue;
+      return catalogue.filter((product) => product.category === category);
     },
 
     getByBadge(badge) {
-      return sampleProducts.filter((product) => product.badge === badge);
+      return catalogue.filter((product) => product.badge === badge);
     },
 
     search(query) {
       const term = (query || "").trim().toLowerCase();
-      if (!term) return sampleProducts;
-      return sampleProducts.filter((product) =>
+      if (!term) return catalogue;
+      return catalogue.filter((product) =>
         product.name.toLowerCase().includes(term)
       );
     },
@@ -219,6 +257,13 @@
         paths +
         "</svg>"
       );
+    },
+
+    renderCards(target, products) {
+      if (!target) return;
+      target.innerHTML = products.map((product, index) => renderProductCard(product, index)).join("");
+      initProductCardActions(target);
+      initWishlistToggles(target);
     },
   };
 
@@ -234,7 +279,34 @@
     mask: "Mask",
     exfoliant: "Exfoliant",
     spf: "Sun Care",
+    uncategorized: "Uncategorized",
   };
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[character]);
+  }
+
+  function displayPrice(product) {
+    return product.sale_price === null ? product.price : product.sale_price;
+  }
+
+  function productPriceMarkup(product, className) {
+    const currentPrice = window.BeautyPluz
+      ? window.BeautyPluz.formatCurrency(displayPrice(product))
+      : "£" + Number(displayPrice(product)).toFixed(2);
+    const regularPrice = window.BeautyPluz
+      ? window.BeautyPluz.formatCurrency(product.price)
+      : "£" + Number(product.price).toFixed(2);
+    return product.sale_price === null
+      ? `<span class="${className}">${currentPrice}</span>`
+      : `<span class="${className}">${currentPrice} <s class="product-card__old-price">${regularPrice}</s></span>`;
+  }
 
   /** Builds the markup for a single product card. `staggerIndex`
       (when provided) adds a fade-up entrance animation with a
@@ -249,6 +321,7 @@
       : "";
     const categoryLabel = CATEGORY_LABELS[product.category] || product.category;
     const reviewCount = product.reviewCount.toLocaleString("en-US");
+    const unavailable = !product.is_available || product.stock_quantity === 0;
     const cardClass =
       typeof staggerIndex === "number" ? "product-card card animate-fade-up" : "product-card card";
     const cardStyle =
@@ -257,29 +330,29 @@
         : "";
 
     return `
-      <article class="${cardClass}"${cardStyle} data-product-id="${product.id}">
+      <article class="${cardClass}"${cardStyle} data-product-id="${escapeHtml(product.id)}">
         <div class="product-card__media">
-          <a class="product-card__image-link" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View details for ${product.name}">
-            <img class="product-card__image zoom-layer" src="${product.image}" alt="${product.name}" loading="lazy" />
+          <a class="product-card__image-link" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View details for ${escapeHtml(product.name)}">
+            <img class="product-card__image zoom-layer" src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" />
           </a>
           ${badgeMarkup}
-          <button type="button" class="product-card__wishlist" data-wishlist-toggle aria-label="Add ${product.name} to wishlist" aria-pressed="false">
+          <button type="button" class="product-card__wishlist" data-wishlist-toggle aria-label="Add ${escapeHtml(product.name)} to wishlist" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 20s-7-4.3-9.5-8.8C1 8 2.5 4.5 6 4.5c2 0 3.3 1.1 4.5 2.6C11.7 5.6 13 4.5 15 4.5c3.5 0 5 3.5 3.5 6.7C19 15.7 12 20 12 20Z"></path>
             </svg>
           </button>
         </div>
         <div class="product-card__body">
-          <p class="product-card__category">${categoryLabel}</p>
-          <h3 class="product-card__name">${product.name}</h3>
-          <p class="product-card__description">${product.description}</p>
+          <p class="product-card__category">${escapeHtml(categoryLabel)}</p>
+          <h3 class="product-card__name">${escapeHtml(product.name)}</h3>
+          <p class="product-card__description">${escapeHtml(product.description)}</p>
           <div class="product-card__rating" aria-label="Rated ${product.rating} out of 5 from ${reviewCount} reviews">
             <span aria-hidden="true">★★★★★</span>
             <span class="product-card__reviews">(${reviewCount})</span>
           </div>
           <div class="product-card__footer">
-            <span class="product-card__price">£${product.price}</span>
-            <button type="button" class="btn btn--primary btn--sm" data-add-to-cart>Add to Cart</button>
+            ${productPriceMarkup(product, "product-card__price")}
+            <button type="button" class="btn btn--primary btn--sm" data-add-to-cart${unavailable ? " disabled" : ""}>${unavailable ? "Unavailable" : "Add to Cart"}</button>
           </div>
         </div>
       </article>
@@ -323,9 +396,9 @@
 
       const matchesPrice =
         !priceRange ||
-        (priceRange === "under-30" && product.price < 30) ||
-        (priceRange === "30-50" && product.price >= 30 && product.price <= 50) ||
-        (priceRange === "50-plus" && product.price > 50);
+        (priceRange === "under-30" && displayPrice(product) < 30) ||
+        (priceRange === "30-50" && displayPrice(product) >= 30 && displayPrice(product) <= 50) ||
+        (priceRange === "50-plus" && displayPrice(product) > 50);
 
       return matchesSearch && matchesCategory && matchesPrice;
     });
@@ -337,13 +410,11 @@
 
     switch (sortKey) {
       case "price-asc":
-        return sorted.sort((a, b) => a.price - b.price);
+        return sorted.sort((a, b) => displayPrice(a) - displayPrice(b));
       case "price-desc":
-        return sorted.sort((a, b) => b.price - a.price);
+        return sorted.sort((a, b) => displayPrice(b) - displayPrice(a));
       case "newest":
-        // No explicit date field in the catalogue — id order is
-        // insertion order, so the highest id is the most recent.
-        return sorted.sort((a, b) => idNumber(b.id) - idNumber(a.id));
+        return sorted.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0) || idNumber(b.id) - idNumber(a.id));
       case "best-selling":
         // No real sales data yet — review count is the standard
         // stand-in signal for popularity.
@@ -415,8 +486,8 @@
   }
 
   /** Wires the wishlist heart button on every card — visual toggle only. */
-  function initWishlistToggles() {
-    document.querySelectorAll("[data-wishlist-toggle]").forEach((button) => {
+  function initWishlistToggles(scope) {
+    (scope || document).querySelectorAll("[data-wishlist-toggle]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
         const isActive = !button.classList.contains("is-active");
@@ -524,6 +595,22 @@
     document.querySelector("[data-filter-clear]")?.addEventListener("click", resetShopFilters);
   }
 
+  function renderShopCategories() {
+    const container = document.querySelector(".filter-drawer .filter-group");
+    if (!container) return;
+    const inputs = container.querySelectorAll('input[name="category"]');
+    if (!inputs.length) return;
+
+    const categories = [...new Set(Products.getAll().map((product) => product.category).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+    container.innerHTML = categories.length
+      ? categories.map((category) => {
+          const label = CATEGORY_LABELS[category] || category;
+          return `<label class="filter-option"><input type="checkbox" name="category" value="${escapeHtml(category)}" /> ${escapeHtml(label)}</label>`;
+        }).join("")
+      : '<p class="filter-option">No categories yet.</p>';
+  }
+
   /* -----------------------------
      Sort select
   ------------------------------ */
@@ -622,8 +709,8 @@
      cart API, using the product catalogue above as the source
      of truth for name/price.
   ------------------------------ */
-  function initProductCardActions() {
-    const buttons = document.querySelectorAll("[data-add-to-cart]");
+  function initProductCardActions(scope) {
+    const buttons = (scope || document).querySelectorAll("[data-add-to-cart]");
     if (!buttons.length) return;
 
     buttons.forEach((button) => {
@@ -633,9 +720,16 @@
         const id = card?.getAttribute("data-product-id");
         const product = id ? Products.getById(id) : null;
 
-        if (!product || !window.BeautyPluzCart) return;
+        if (!product || !window.BeautyPluzCart || !product.is_available || product.stock_quantity === 0) return;
 
-        window.BeautyPluzCart.addItem(product, 1);
+        const previousQuantity =
+          window.BeautyPluzCart.getItems().find((item) => item.id === product.id)?.quantity || 0;
+        const updatedItems = window.BeautyPluzCart.addItem(product, 1);
+        const updatedQuantity = updatedItems.find((item) => item.id === product.id)?.quantity || 0;
+        if (updatedQuantity <= previousQuantity) {
+          window.BeautyPluz?.showToast("No more stock is available");
+          return;
+        }
         window.BeautyPluz?.showToast("Added to Cart");
 
         const originalLabel = button.textContent;
@@ -654,6 +748,17 @@
       and product-detail link as the catalogue. The product id remains the
       single association between every display and its product data. */
   function hydrateHomepageProductCards() {
+    document.querySelectorAll("[data-home-products]").forEach((grid) => {
+      const type = grid.getAttribute("data-home-products");
+      const products = Products.getAll()
+        .filter((product) => type === "featured" ? product.is_featured : product.badge === "new")
+        .filter((product) => product.is_available && product.is_published && product.stock_quantity !== 0)
+        .slice(0, 4);
+      grid.innerHTML = products.length
+        ? products.map((product, index) => renderProductCard(product, index)).join("")
+        : '<p class="product-grid__empty">No products are currently featured here.</p>';
+    });
+
     document.querySelectorAll(".product-card[data-product-id]").forEach((card) => {
       const product = Products.getById(card.getAttribute("data-product-id"));
       const media = card.querySelector(".product-card__media");
@@ -676,9 +781,14 @@
       target.innerHTML = `<div class="product-detail__missing"><h1>Product not found</h1><p>That product is no longer in our collection.</p><a class="btn btn--primary" href="shop.html">Return to shop</a></div>`;
       return;
     }
+    if (!product.is_available || product.stock_quantity === 0) {
+      target.innerHTML = `<div class="product-detail__missing"><h1>This product is unavailable</h1><p>It is not currently available to purchase.</p><a class="btn btn--primary" href="shop.html">Return to shop</a></div>`;
+      return;
+    }
     const category = CATEGORY_LABELS[product.category] || product.category;
     const reviews = product.reviewCount.toLocaleString("en-US");
-    target.innerHTML = `<a class="link-arrow product-detail__back" href="shop.html">← Back to all products</a><div class="product-detail__layout"><div class="product-detail__media"><img src="${product.image}" alt="${product.name}" /></div><div class="product-detail__content" data-product-id="${product.id}"><p class="product-detail__category">${category}</p><h1>${product.name}</h1><p class="product-detail__rating"><span aria-hidden="true">★★★★★</span> ${product.rating} (${reviews} reviews)</p><p class="product-detail__price">£${product.price}</p><p class="product-detail__description">${product.description}</p><button type="button" class="btn btn--primary" data-add-to-cart>Add to Cart</button></div></div>`;
+    const priceMarkup = productPriceMarkup(product, "product-detail__price");
+    target.innerHTML = `<a class="link-arrow product-detail__back" href="shop.html">← Back to all products</a><div class="product-detail__layout"><div class="product-detail__media"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" /></div><div class="product-detail__content" data-product-id="${escapeHtml(product.id)}"><p class="product-detail__category">${escapeHtml(category)}</p><h1>${escapeHtml(product.name)}</h1><p class="product-detail__rating"><span aria-hidden="true">★★★★★</span> ${product.rating} (${reviews} reviews)</p><p>${priceMarkup}</p><p class="product-detail__description">${escapeHtml(product.description)}</p><button type="button" class="btn btn--primary" data-add-to-cart>Add to Cart</button></div></div>`;
   }
 
   // Render order matters here: the shop grid must exist in the DOM
@@ -691,10 +801,22 @@
   // after every filter/sort change — these top-level calls only
   // matter for the homepage's hand-authored static cards, and are
   // harmless no-ops against shop.html's still-loading skeleton.)
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      await Products.ready;
+    } catch (error) {
+      console.error("Beauty Pluz: could not load the product catalogue.", error);
+      const grid = document.querySelector("[data-product-grid]");
+      if (grid) grid.innerHTML = '<p class="shop-empty-state">We could not load products right now. Please refresh the page or try again later.</p>';
+      const detail = document.querySelector("[data-product-detail]");
+      if (detail) detail.textContent = "We could not load this product right now. Please refresh the page or try again later.";
+      return;
+    }
+
     initShopToolbar();
     initFilterDrawer();
     initShopSearch();
+    renderShopCategories();
     initCategoryAndPriceFilters();
     initSortSelect();
     renderShopGrid();

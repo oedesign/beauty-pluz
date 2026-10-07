@@ -1,3 +1,5 @@
+import { loadPublishedHomepageContent } from "./home-content.js";
+
 /* =========================================================
    BEAUTY PLUZ — HERO-CAROUSEL.JS
    Data-driven, auto-rotating hero carousel for the homepage.
@@ -95,10 +97,47 @@
   // SLIDES and place the corresponding file in images/hero/.
 
   const AUTOPLAY_INTERVAL_MS = 5500;
+  const FALLBACK_IMAGE = "images/hero/skincare-product-hero-image1.jpeg";
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[character]);
+  }
+
+  function safeLink(value) {
+    const link = String(value || "").trim();
+    if (!link || link.startsWith("//") || /^(javascript|data|vbscript):/i.test(link)) return "shop.html";
+    try {
+      const parsed = new URL(link, window.location.href);
+      return parsed.protocol === "https:" || parsed.origin === window.location.origin
+        ? link
+        : "shop.html";
+    } catch {
+      return "shop.html";
+    }
+  }
+
+  function safeImage(value) {
+    const image = String(value || "").trim();
+    if (!image || image.startsWith("//") || /^(javascript|data|vbscript):/i.test(image)) return FALLBACK_IMAGE;
+    try {
+      const parsed = new URL(image, window.location.href);
+      return parsed.protocol === "https:" || parsed.origin === window.location.origin
+        ? image
+        : FALLBACK_IMAGE;
+    } catch {
+      return FALLBACK_IMAGE;
+    }
+  }
 
   function renderCta(cta, variant) {
     if (!cta) return "";
-    return `<a href="${cta.href}" class="btn ${variant}">${cta.label}</a>`;
+    return `<a href="${escapeHtml(safeLink(cta.href))}" class="btn ${variant}">${escapeHtml(cta.label)}</a>`;
   }
 
   function renderSlide(slide, index, total) {
@@ -114,13 +153,13 @@
         aria-label="Slide ${index + 1} of ${total}"
         aria-hidden="${index === 0 ? "false" : "true"}"
       >
-        <div class="hero-carousel__media" data-theme="${slide.theme}" style="background-image: url('${slide.image}');" aria-hidden="true"></div>
+        <div class="hero-carousel__media" data-theme="${escapeHtml(slide.theme)}" data-slide-image="${escapeHtml(safeImage(slide.image))}" aria-hidden="true"></div>
         <div class="hero-carousel__scrim" aria-hidden="true"></div>
         <div class="hero-carousel__content">
           <div class="hero-carousel__inner">
-            <span class="eyebrow eyebrow--on-dark">${slide.eyebrow}</span>
-            <h1 class="hero-carousel__heading">${slide.heading}</h1>
-            <p class="hero-carousel__text">${slide.description}</p>
+            <span class="eyebrow eyebrow--on-dark">${escapeHtml(slide.eyebrow)}</span>
+            <h1 class="hero-carousel__heading">${escapeHtml(slide.heading)}</h1>
+            <p class="hero-carousel__text">${escapeHtml(slide.description)}</p>
             <div class="hero-carousel__actions">
               ${renderCta(slide.primaryCta, "btn--rose")}
               ${renderCta(slide.secondaryCta, "btn--light")}
@@ -158,16 +197,42 @@
     root.querySelectorAll("[data-theme]").forEach((el) => {
       const theme = el.getAttribute("data-theme");
       const gradient = THEME_GRADIENTS[theme];
-      if (!gradient) return;
-      // Layer the gradient underneath the photo url() already set
-      // inline, so it's the first thing visible on paint and the
-      // fallback if the photo request ever fails.
-      const existing = el.style.backgroundImage;
-      el.style.backgroundImage = `${existing}, ${gradient}`;
+      const fallback = `url(${JSON.stringify(FALLBACK_IMAGE)})`;
+      el.style.backgroundImage = gradient ? `${fallback}, ${gradient}` : fallback;
+
+      const requested = safeImage(el.getAttribute("data-slide-image"));
+      const image = new Image();
+      image.onload = () => {
+        el.style.backgroundImage = `url(${JSON.stringify(requested)}), ${gradient || "linear-gradient(135deg, #4f5f49 0%, #262420 100%)"}`;
+      };
+      image.onerror = () => {
+        el.style.backgroundImage = gradient ? `${fallback}, ${gradient}` : fallback;
+      };
+      image.src = requested;
     });
   }
 
-  function initHeroCarousel() {
+  function normalizeSlides(content) {
+    const configured = content?.slides;
+    if (!Array.isArray(configured)) return SLIDES;
+    const enabled = configured.filter((slide) => slide?.enabled && slide.image);
+    if (!enabled.length) return SLIDES;
+    return enabled.map((slide) => ({
+      id: slide.id || "",
+      image: slide.image,
+      theme: slide.theme || "sage",
+      eyebrow: slide.eyebrow || "",
+      heading: slide.heading || "",
+      description: slide.description || "",
+      primaryCta: slide.ctaText ? { label: slide.ctaText, href: slide.ctaLink } : null,
+      secondaryCta: slide.secondaryCtaText
+        ? { label: slide.secondaryCtaText, href: slide.secondaryCtaLink }
+        : null,
+      align: slide.align === "right" ? "right" : "left",
+    }));
+  }
+
+  async function initHeroCarousel() {
     const root = document.querySelector("[data-hero-carousel]");
     if (!root) return;
 
@@ -177,7 +242,14 @@
     const nextBtn = root.querySelector("[data-carousel-next]");
     if (!track) return;
 
-    const total = SLIDES.length;
+    let slides = SLIDES;
+    try {
+      slides = normalizeSlides(await loadPublishedHomepageContent());
+    } catch (error) {
+      console.error("Beauty Pluz: could not load published hero slides.", error);
+    }
+
+    const total = slides.length;
     let currentIndex = 0;
     let autoplayId = null;
 
@@ -186,11 +258,11 @@
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // --- Initial render ---
-    track.innerHTML = SLIDES.map((slide, i) => renderSlide(slide, i, total)).join("");
+    track.innerHTML = slides.map((slide, i) => renderSlide(slide, i, total)).join("");
     applyThemeFallback(track);
 
     if (dotsContainer) {
-      dotsContainer.innerHTML = SLIDES.map((_, i) => renderDot(i, i === 0)).join("");
+      dotsContainer.innerHTML = slides.map((_, i) => renderDot(i, i === 0)).join("");
     }
 
     const slideEls = Array.from(track.querySelectorAll("[data-slide-index]"));
