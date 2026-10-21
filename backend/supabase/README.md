@@ -4,7 +4,7 @@ The storefront is a static HTML/CSS/JavaScript site, so admin authorization is e
 
 ## Provision the backend
 
-1. Create a Supabase project and apply, in filename order, `migrations/20261007010000_admin_auth.sql`, `migrations/20261007020000_product_management.sql`, `migrations/20261007030000_homepage_content.sql`, `migrations/20261007040000_orders_inventory.sql`, and `migrations/20261007050000_store_settings.sql` using the Supabase CLI or SQL editor. The product migration creates the shared catalogue table, seeds the current 12 products without overwriting later edits, configures the persistent `product-images` bucket, and adds immutable order-line snapshot fields. The homepage migration adds draft/published content storage, guarded admin RPCs, and the persistent homepage image bucket. The order/inventory migration adds protected order-history and fulfilment RPCs, status audit records, and guarded stock updates. The store-settings migration adds protected editable store identity, customer contact details including address and business hours, social links, display-only promotions, delivery copy, footer links, and a persistent store logo bucket.
+1. Apply the migrations in filename order. The product migration creates the shared catalogue table, seeds the current 12 products without overwriting later edits, configures the persistent `product-images` bucket, and adds immutable order-line snapshot fields. The homepage migration adds draft/published content storage, guarded admin RPCs, and the persistent homepage image bucket. The order/inventory migration adds protected order-history and fulfilment RPCs, status audit records, and guarded stock updates. The store-settings migration adds protected editable store identity, customer contact details including address and business hours, social links, display-only promotions, delivery copy, footer links, and a persistent store logo bucket. The checkout foundation and follow-up migration add server-only checkout-attempt, event-idempotency, and stock-reservation operations; these are database groundwork only and do not yet enable Stripe payments.
 2. Disable public user sign-ups in Supabase Auth. Create/invite the store owner’s account through the trusted Supabase dashboard; there is no public admin registration page.
 3. Add the new Auth user's UUID to the administrator allowlist using the SQL editor:
 
@@ -25,10 +25,36 @@ The storefront is a static HTML/CSS/JavaScript site, so admin authorization is e
 - Customer order details are available only through admin-checked RPCs; direct browser access to `orders`, `order_items`, and status history remains revoked. Fulfilment changes accept only known statuses on the server and are recorded with actor and timestamp. Payment status and references are read-only in this dashboard and must be written by a trusted payment-provider integration after verification.
 - Store settings are edited by the administrator and served publicly through a read-only published-settings RPC; the underlying settings table remains private. Logo uploads use the admin-only `store-assets` write policies. Social/footer URLs, contact formats, content sizes, and GBP-only currency are validated on the server as well as in the editor. Promotional codes are rendered as text only and have no discount/checkout effect. Shipping copy is informational and does not modify delivery estimates, charges, thresholds, or availability.
 - The existing storefront has no standalone privacy, terms, or shipping policy pages. Store settings can add footer links to pages that exist (or secure external pages), but do not create legal policy content. GBP is fixed because pricing/cart formatting has no currency conversion support.
-- The current cart checkout only hands order details to WhatsApp. It does not persist an order, and no payment provider or verified payment webhook is configured. Consequently, the Orders page will remain empty until a trusted backend checkout/order-ingestion endpoint creates order and item rows with customer details, totals, and immutable item snapshots. Do not create client-side orders or mark WhatsApp requests as paid.
+- The current cart checkout only hands order details to WhatsApp and is not connected to the new Edge Functions. No live payment provider or verified payment webhook is configured. Consequently, the Orders page will remain empty until the storefront is connected to a trusted backend checkout endpoint. Do not create client-side orders or mark WhatsApp requests as paid.
 - Do not grant browser clients write access to the allowlist or use the service-role key in frontend code.
 - `tests/admin_auth.test.sql` covers unauthenticated and ordinary-user guard denial. `tests/product_crud.test.sql` tests authorized create/read/update/delete, case-insensitive duplicate rejection, ordinary-customer write denial, and preservation of historical order snapshots. `tests/homepage_content.test.sql` tests private drafts, customer write denial, rejected unsafe CTA links, and publishing to public storefront readers. `tests/orders_inventory.test.sql` tests protected order search/details, historical snapshots, server-validated fulfilment updates and status history, payment data remaining unverified, and authorized-only stock changes. Run the tests against a Supabase test/local database after applying the migrations.
 - `tests/store_settings.test.sql` tests authorized settings persistence, public read-only storefront access, customer denial, private table access, safe URL validation, and rejection of unsupported currency. Run it against a Supabase test/local database after applying the migrations.
+- `tests/checkout_foundation.test.sql` covers atomic basket creation, retry/idempotency behavior, verified-event state changes, reservation release, and denied browser-role access. `tests/checkout_concurrency.test.ps1` exercises two concurrent local attempts for the final unit; run it only after starting the local Supabase stack. Neither test should be treated as passing until it has been run against a local PostgreSQL/Supabase database.
+- `tests/stripe_functions.test.mjs` covers checkout request validation, trusted order snapshots, Stripe retry idempotency, raw webhook signature input, database mismatches, and transient failures. Run with `node --test backend/supabase/tests/stripe_functions.test.mjs` from the repository root.
+
+## Stripe Edge Functions (not yet deployed)
+
+The `stripe-checkout` and `stripe-webhook` Edge Function sources use Stripe-hosted Checkout in GBP and the server-only RPCs established by the migrations. Both functions disable gateway JWT verification: guest checkout is public, and Stripe webhook requests are authenticated by Stripe's raw-body signature instead. The functions still enforce method, body-size, origin, field, amount, and database-state checks. Never expose the Supabase service-role key or Stripe secrets to the storefront.
+
+Supabase provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Edge Runtime; the functions require those server-side values but they do not need to be copied into the local env file or manually set as project secrets. Configure these Edge Function secrets and deployment settings:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `CHECKOUT_ALLOWED_ORIGINS` (comma-separated exact origins, with no paths)
+- `CHECKOUT_SUCCESS_URL` (must contain Stripe's literal `{CHECKOUT_SESSION_ID}` placeholder)
+- `CHECKOUT_CANCEL_URL`
+- `CHECKOUT_DELIVERY_FEE_PENCE` (trusted integer pence; never accepted from the browser)
+
+Use a local-only env file outside the repository for `supabase functions serve`; do not commit it. Supabase supplies local `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` when serving locally. Example with a local Stripe test key and a Stripe CLI webhook-forwarding secret:
+
+```powershell
+supabase start --workdir "C:\beauty-pluz\backend"
+supabase functions serve stripe-checkout stripe-webhook --env-file "C:\secure\beauty-pluz-functions.local.env" --workdir "C:\beauty-pluz\backend"
+```
+
+Set the local env file's allowed origin and success/cancel URLs to the actual local static-site origin. Supabase injects the local URL and service-role key and rejects attempts to override `SUPABASE_*` through this env file. The success URL is only a redirect; it is not proof of payment. Stripe CLI forwarding and test-mode credentials are required for end-to-end checkout/payment testing. Do not use `supabase secrets set` or deploy commands until the project is deliberately linked and reviewed.
+
+The public guest endpoint does not yet have a distributed rate limiter or CAPTCHA integration. Before enabling it on a public site, add a deployment-level abuse control (or an approved CAPTCHA/rate-limit design). Also configure real storefront return URLs and implement the customer-facing success/cancel experience in a separate frontend step.
 
 ## Catalogue and storefront behavior
 
