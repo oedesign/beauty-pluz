@@ -419,3 +419,12 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.stripe-guest-handoff]
+verify_jwt = false
+
+[functions.stripe-guest-status]
+verify_jwt = false
+
+[functions.stripe-checkout-recover]
+verify_jwt = false

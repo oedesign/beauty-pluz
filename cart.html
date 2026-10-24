@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/style.css?v=20260713" />
+  <link rel="stylesheet" href="css/style.css?v=20261021" />
   <link rel="stylesheet" href="css/responsive.css?v=20260713" />
   <link rel="stylesheet" href="css/animations.css?v=20260713" />
 </head>
@@ -59,7 +59,7 @@
           <span class="cart-badge" data-cart-count hidden>0</span>
         </a>
 
-        <a class="btn-whatsapp" href="https://wa.me/+447823894470"" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
+        <a class="btn-whatsapp" href="https://wa.me/+447823894470" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path>
             <path d="M9 10.5c.4 1.6 2 3.2 3.6 3.6"></path>
@@ -127,35 +127,37 @@
               <!-- Number of items / subtotal / delivery estimate / grand total, rendered by js/cart.js -->
             </div>
 
-            <div class="cart-summary__delivery">
+            <form class="cart-summary__delivery" data-checkout-form>
               <h3 class="cart-summary__delivery-heading">Delivery Details</h3>
-              <p class="cart-summary__delivery-hint">We'll include this with your order on WhatsApp.</p>
+              <p class="cart-summary__delivery-hint">Your delivery details are sent securely to prepare your order. The delivery charge and final total are confirmed on Stripe before payment.</p>
 
               <div class="field">
                 <label for="customer-name">Full Name</label>
-                <input type="text" id="customer-name" name="customerName" autocomplete="name" placeholder="Jane Doe" />
+                <input type="text" id="customer-name" name="customerName" autocomplete="name" maxlength="180" placeholder="Jane Doe" required />
               </div>
 
               <div class="field">
-                <label for="customer-phone">Phone Number</label>
-                <input type="tel" id="customer-phone" name="customerPhone" autocomplete="tel" placeholder="+234 800 000 0000" />
+                <label for="customer-email">Email Address</label>
+                <input type="email" id="customer-email" name="customerEmail" autocomplete="email" maxlength="254" placeholder="jane@example.com" required />
+              </div>
+
+              <div class="field">
+                <label for="customer-phone">Phone Number <span>(optional)</span></label>
+                <input type="tel" id="customer-phone" name="customerPhone" autocomplete="tel" maxlength="40" placeholder="+44 7823 894470" />
               </div>
 
               <div class="field">
                 <label for="customer-address">Delivery Address</label>
-                <textarea id="customer-address" name="customerAddress" rows="2" placeholder="Street, city, state"></textarea>
+                <textarea id="customer-address" name="customerAddress" autocomplete="street-address" minlength="5" maxlength="1000" rows="3" placeholder="Street, city, postcode" required></textarea>
               </div>
 
-              <p class="cart-summary__error" data-delivery-error role="alert" hidden></p>
-            </div>
+              <p class="cart-summary__error" data-checkout-error role="alert" hidden></p>
+              <p class="cart-summary__status" data-checkout-status role="status" aria-live="polite"></p>
 
-            <button type="button" class="btn btn--whatsapp-solid cart-summary__whatsapp" data-order-whatsapp disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 20l1.4-4.2A8 8 0 1 1 9 18.8L4 20Z"></path>
-                <path d="M9 10.5c.4 1.6 2 3.2 3.6 3.6"></path>
-              </svg>
-              Order via WhatsApp
-            </button>
+              <button type="submit" class="btn btn--primary cart-summary__checkout" data-stripe-checkout disabled>
+                Pay securely with Stripe
+              </button>
+            </form>
 
             <a href="shop.html" class="link-arrow cart-summary__continue">Continue Shopping
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -237,7 +239,7 @@
   <script src="js/backend-config.js"></script>
   <script src="js/main.js?v=20260713" defer></script>
   <script src="js/menu.js?v=20260713" defer></script>
-  <script src="js/cart.js?v=20260713" defer></script>
+  <script src="js/cart.js?v=20261021" defer></script>
   <script type="module" src="js/products.js?v=20261007"></script>
   <script type="module" src="js/storefront-settings.js?v=20261007"></script>
 </body>

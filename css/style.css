@@ -124,6 +124,11 @@
   padding: 0;
 }
 
+.cart-empty[hidden],
+.cart-layout[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: var(--header-height);
@@ -2263,8 +2268,18 @@ main {
   padding: var(--space-2xs) var(--space-sm);
 }
 
-/* --- Order via WhatsApp button --- */
-.cart-summary__whatsapp {
+.cart-summary__status {
+  min-height: 1.25em;
+  font-size: var(--fs-xs);
+  color: var(--clr-text-muted);
+}
+
+.cart-summary__delivery[aria-busy="true"] {
+  opacity: 0.75;
+}
+
+/* --- Stripe checkout button --- */
+.cart-summary__checkout {
   width: 100%;
   margin-top: var(--space-md);
   padding-block: var(--space-sm);
@@ -2272,12 +2287,7 @@ main {
   gap: var(--space-2xs);
 }
 
-.cart-summary__whatsapp svg {
-  width: 20px;
-  height: 20px;
-}
-
-.cart-summary__whatsapp:disabled {
+.cart-summary__checkout:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
@@ -2299,6 +2309,55 @@ main {
   max-width: 420px;
   margin-inline: auto;
   padding-block: var(--space-2xl);
+}
+
+.checkout-return__card {
+  max-width: 680px;
+  margin-inline: auto;
+  padding: clamp(var(--space-lg), 5vw, var(--space-2xl));
+  background: var(--clr-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.checkout-return__eyebrow {
+  margin-bottom: var(--space-xs);
+  color: var(--clr-rose-gold);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.checkout-return__card h1 {
+  margin-bottom: var(--space-md);
+  font-family: var(--font-display);
+  font-size: clamp(var(--fs-xl), 5vw, var(--fs-3xl));
+}
+
+.checkout-return__card > p:not(.checkout-return__eyebrow) {
+  margin-top: var(--space-sm);
+  color: var(--clr-text-muted);
+  line-height: 1.7;
+}
+
+.checkout-return__status {
+  padding: var(--space-sm);
+  color: var(--clr-ink) !important;
+  background: var(--clr-ivory-deep);
+  border-radius: var(--radius-sm);
+}
+
+.checkout-return__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.checkout-return__actions > [hidden] {
+  display: none !important;
 }
 
 .cart-empty__icon {
@@ -3579,5 +3638,3 @@ main {
           background-repeat: no-repeat;
       }
 } */
-
-

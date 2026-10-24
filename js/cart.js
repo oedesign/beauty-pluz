@@ -193,8 +193,8 @@
      header badge above).
      ========================================================= */
 
-  const WHATSAPP_NUMBER = "10000000000"; // same number used in the header/footer WhatsApp links
   const DELIVERY_ESTIMATE = "2–4 business days";
+  let checkoutInProgress = false;
 
   /** Builds the inline SVG markup for a cart row's product icon,
       reusing the single icon set defined in products.js. */
@@ -206,12 +206,10 @@
     return "";
   }
 
-  /** Renders just the numeric totals block (items / subtotal / delivery / grand total).
-      The delivery-details form and WhatsApp button live outside this element in the
-      HTML so re-rendering the totals never wipes out what the person has typed. */
+  /** Renders the cart totals without implying a browser-calculated payment amount. */
   function renderSummary(items) {
     const totals = document.querySelector("[data-cart-summary-totals]");
-    const whatsappBtn = document.querySelector("[data-order-whatsapp]");
+    const checkoutBtn = document.querySelector("[data-stripe-checkout]");
     if (!totals) return;
 
     const subtotal = Cart.getSubtotal();
@@ -223,7 +221,7 @@
         <span>${itemCount}</span>
       </div>
       <div class="cart-summary__row">
-        <span>Subtotal</span>
+        <span>Items subtotal</span>
         <span>${money(subtotal)}</span>
       </div>
       <div class="cart-summary__row">
@@ -231,80 +229,12 @@
         <span>${items.length === 0 ? "—" : DELIVERY_ESTIMATE}</span>
       </div>
       <div class="cart-summary__row cart-summary__row--total">
-        <span>Grand Total</span>
-        <span>${money(subtotal)}</span>
+        <span>Delivery &amp; payment total</span>
+        <span>Shown on Stripe</span>
       </div>
     `;
 
-    if (whatsappBtn) whatsappBtn.disabled = items.length === 0;
-  }
-
-  /** Builds the plain-text WhatsApp order message from cart items + customer details. */
-  function buildWhatsAppMessage(items, customer) {
-    const lines = items.map(
-      (item) =>
-        `• ${item.name} x${item.quantity} — ${money(item.price * item.quantity)}`
-    );
-
-    return [
-      "Hello Beauty Pluz,",
-      "",
-      "I would like to order:",
-      "",
-      ...lines,
-      "",
-      `Total: ${money(Cart.getSubtotal())}`,
-      "",
-      `Customer Name: ${customer.name}`,
-      `Phone Number: ${customer.phone}`,
-      `Delivery Address: ${customer.address}`,
-    ].join("\n");
-  }
-
-  /** Wires the delivery-details form + "Order via WhatsApp" button. */
-  function initWhatsAppOrder() {
-    const button = document.querySelector("[data-order-whatsapp]");
-    const errorEl = document.querySelector("[data-delivery-error]");
-    if (!button) return;
-
-    const nameInput = document.querySelector("#customer-name");
-    const phoneInput = document.querySelector("#customer-phone");
-    const addressInput = document.querySelector("#customer-address");
-
-    button.addEventListener("click", () => {
-      const items = Cart.getItems();
-      if (items.length === 0) return;
-
-      const customer = {
-        name: (nameInput?.value || "").trim(),
-        phone: (phoneInput?.value || "").trim(),
-        address: (addressInput?.value || "").trim(),
-      };
-
-      if (!customer.name || !customer.phone || !customer.address) {
-        if (errorEl) {
-          errorEl.textContent = "Please fill in your name, phone number, and delivery address.";
-          errorEl.hidden = false;
-        }
-        const firstEmpty = !customer.name ? nameInput : !customer.phone ? phoneInput : addressInput;
-        firstEmpty?.focus();
-        return;
-      }
-
-      if (errorEl) errorEl.hidden = true;
-
-      const message = buildWhatsAppMessage(items, customer);
-      const recipient = String(window.BEAUTY_PLUZ_WHATSAPP_NUMBER || WHATSAPP_NUMBER).replace(/\D/g, "");
-      const url = `https://wa.me/${recipient}?text=${encodeURIComponent(message)}`;
-      window.open(url, "_blank", "noopener,noreferrer");
-    });
-
-    // Clear the error as soon as the person starts fixing the form
-    [nameInput, phoneInput, addressInput].forEach((input) => {
-      input?.addEventListener("input", () => {
-        if (errorEl && !errorEl.hidden) errorEl.hidden = true;
-      });
-    });
+    if (checkoutBtn) checkoutBtn.disabled = items.length === 0 || checkoutInProgress;
   }
 
   /** Formats a currency amount using the shared BeautyPluz helper if present. */
@@ -391,6 +321,95 @@
     renderSummary(items);
   }
 
+  async function initStripeCheckout() {
+    const form = document.querySelector("[data-checkout-form]");
+    const button = document.querySelector("[data-stripe-checkout]");
+    const status = document.querySelector("[data-checkout-status]");
+    const error = document.querySelector("[data-checkout-error]");
+    if (!form || !button || !status || !error) return;
+
+    const nameInput = document.querySelector("#customer-name");
+    const emailInput = document.querySelector("#customer-email");
+    const phoneInput = document.querySelector("#customer-phone");
+    const addressInput = document.querySelector("#customer-address");
+    let checkoutModule;
+    try {
+      checkoutModule = await import("./stripe-checkout.mjs");
+    } catch {
+      button.disabled = true;
+      error.textContent = "Secure checkout is unavailable right now. Please contact us.";
+      error.hidden = false;
+      return;
+    }
+
+    const handleSubmit = checkoutModule.createSingleFlight(async () => {
+      const items = Cart.getItems();
+      if (items.length === 0) {
+        error.textContent = "Your cart is empty. Add an item before starting checkout.";
+        error.hidden = false;
+        return;
+      }
+
+      const customer = {
+        name: nameInput?.value || "",
+        email: emailInput?.value || "",
+        phone: phoneInput?.value || "",
+        shippingAddress: addressInput?.value || ""
+      };
+      let redirecting = false;
+      button.disabled = true;
+      button.textContent = "Connecting to secure checkout…";
+      form.setAttribute("aria-busy", "true");
+      status.textContent = "Preparing your secure checkout. Please wait.";
+      error.hidden = true;
+
+      try {
+        const config = window.BEAUTY_PLUZ_BACKEND_CONFIG || {};
+        const endpoint = checkoutModule.getCheckoutEndpoint(config);
+        const requestDetails = checkoutModule.buildCheckoutRequest(items, customer);
+        const idempotencyKey = await checkoutModule.getOrCreateIdempotencyKey(requestDetails);
+        const payload = checkoutModule.buildCheckoutRequest(items, customer, idempotencyKey);
+        const checkoutUrl = await checkoutModule.requestStripeCheckout(
+          endpoint,
+          payload
+        );
+        redirecting = true;
+        window.location.assign(checkoutUrl);
+      } catch (checkoutError) {
+        status.textContent = "";
+        if (checkoutError?.status === 409) {
+          error.textContent = "This checkout may already have completed or expired. To avoid a duplicate payment, do not retry here; check your email or contact our team.";
+        } else if (checkoutError?.status === 400) {
+          error.textContent = "We could not verify the current cart. Please review your items and delivery details.";
+        } else {
+          error.textContent = checkoutError?.message ||
+            "Secure checkout is temporarily unavailable. Please try again.";
+        }
+        error.hidden = false;
+      } finally {
+        checkoutInProgress = false;
+        form.removeAttribute("aria-busy");
+        if (!redirecting) {
+          button.disabled = Cart.getItems().length === 0;
+          button.textContent = "Pay securely with Stripe";
+        }
+      }
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      checkoutInProgress = true;
+      void handleSubmit();
+    });
+
+    [nameInput, emailInput, phoneInput, addressInput].forEach((input) => {
+      input?.addEventListener("input", () => {
+        if (!error.hidden) error.hidden = true;
+      });
+    });
+  }
+
   function initCartPage() {
     if (!document.querySelector("[data-cart-list]")) return;
     Promise.resolve(window.BeautyPluzProducts?.ready)
@@ -398,7 +417,7 @@
         renderCartPage();
         refreshCartBadge();
         Cart.onChange(renderCartPage);
-        initWhatsAppOrder();
+        return initStripeCheckout();
       })
       .catch((err) => {
         console.error("Beauty Pluz: could not load product information for the cart", err);

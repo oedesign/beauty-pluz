@@ -1,0 +1,11 @@
+name = "beauty-pluz-checkout-gateway"
+main = "src/index.mjs"
+compatibility_date = "2026-10-21"
+
+[[durable_objects.bindings]]
+name = "GUEST_RATE_LIMITER"
+class_name = "GuestRateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GuestRateLimiter"]

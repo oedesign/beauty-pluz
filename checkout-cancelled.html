@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Checkout cancelled — Beauty Pluz</title>
+  <meta name="description" content="Your Beauty Pluz checkout was cancelled." />
+  <script src="js/checkout-handoff.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=20261022" />
+  <link rel="stylesheet" href="css/responsive.css?v=20260713" />
+  <link rel="stylesheet" href="css/animations.css?v=20260713" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo"><img src="images/beautypluz-logo.webp" alt="Beauty Pluz home" width="85" /></a>
+      <nav class="nav-primary" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="shop.html">Shop</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <a href="cart.html" class="icon-btn cart-btn" aria-label="View cart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"></path>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="section checkout-return" aria-labelledby="checkout-return-heading" data-checkout-return="cancelled">
+      <div class="container">
+        <div class="checkout-return__card">
+          <p class="checkout-return__eyebrow">Stripe Checkout</p>
+          <h1 id="checkout-return-heading">Checkout was cancelled</h1>
+          <p>Your cart has been kept so you can review it. This page does not create another Checkout Session or change any payment status.</p>
+          <p class="checkout-return__status" data-return-status role="status" aria-live="polite">Checkout was cancelled.</p>
+          <p data-return-detail>Returning from Stripe does not by itself confirm a payment. Check your secure order status before trying again.</p>
+          <p data-order-reference></p>
+          <p>If you already submitted payment details and are unsure whether payment completed, check your email or <a href="contact.html">contact our team</a> before trying again.</p>
+          <div class="checkout-return__actions">
+            <button class="btn btn--rose" type="button" data-refresh-status>Refresh payment status</button>
+            <button class="btn btn--rose" type="button" data-recover-checkout hidden>Try checkout recovery</button>
+            <a class="btn btn--rose" href="cart.html">Return to your cart</a>
+            <a class="link-arrow" href="shop.html">Continue shopping</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-brand__text">Beauty Pluz — considered essentials for your daily ritual.</p>
+      <p><a href="contact.html">Contact and support</a></p>
+    </div>
+  </footer>
+  <script src="js/backend-config.js"></script>
+  <script type="module" src="js/checkout-return.mjs"></script>
+</body>
+</html>

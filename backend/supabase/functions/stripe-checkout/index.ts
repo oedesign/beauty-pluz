@@ -28,7 +28,7 @@ const handler = createCheckoutHandler({
         async getAttempt(attemptId) {
           const { data, error } = await supabase
             .from("checkout_sessions")
-            .select("id, order_id, attempt_key, stripe_checkout_session_id, status, amount_total, currency, expires_at")
+            .select("id, order_id, attempt_key, stripe_checkout_session_id, status, amount_total, currency, expires_at, customer_email")
             .eq("id", attemptId)
             .maybeSingle();
           if (error || !data) throw new Error("Could not load checkout attempt");
@@ -50,6 +50,29 @@ const handler = createCheckoutHandler({
             p_expires_at: expiresAt
           });
           if (error) throw new Error("Could not attach Stripe Checkout Session");
+        },
+        async registerCapabilities(input) {
+          const { error } = await supabase.rpc("register_guest_checkout_capabilities", input);
+          if (error) throw new Error("Could not register guest checkout capabilities");
+        },
+        async consumeRateLimit(bucketHash, limit, windowSeconds) {
+          const { data, error } = await supabase.rpc("consume_guest_checkout_rate_limit", {
+            p_bucket_hash: bucketHash,
+            p_limit: limit,
+            p_window_seconds: windowSeconds
+          });
+          if (error || !Array.isArray(data) || data.length !== 1) {
+            throw new Error("Could not enforce checkout rate limit");
+          }
+          return data[0];
+        },
+        async recoverAttempt(input) {
+          const { data, error } = await supabase.rpc("recover_guest_checkout_attempt", input);
+          if (error) throw error;
+          if (!Array.isArray(data) || data.length !== 1) {
+            throw new Error("Could not recover checkout attempt");
+          }
+          return data[0];
         }
       },
       stripe: {

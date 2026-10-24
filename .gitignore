@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+*.local.env
 
 # Build output
 dist/
@@ -38,3 +39,4 @@ coverage/
 
 # Supabase local development
 .supabase/
+.branches/

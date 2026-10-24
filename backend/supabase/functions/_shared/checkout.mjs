@@ -1,14 +1,23 @@
 // @ts-check
+import {
+  appendHandoffFragment,
+  consumeCheckoutRateLimits,
+  deriveGuestCapability,
+  hashGuestCapability,
+  hashRateLimitKey
+} from "./guest-access.mjs";
+import { gatewayAuthFailure, verifyGatewayRequest } from "./gateway-auth.mjs";
 
 const MAX_REQUEST_BYTES = 16 * 1024;
 const CHECKOUT_LIFETIME_MS = 60 * 60 * 1000;
 const MIN_STRIPE_SESSION_LIFETIME_SECONDS = 30 * 60;
 
 class RequestError extends Error {
-  /** @param {number} status */
-  constructor(status) {
+  /** @param {number} status @param {number} retryAfter */
+  constructor(status, retryAfter = 0) {
     super("Invalid checkout request");
     this.status = status;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -17,6 +26,8 @@ class RequestError extends Error {
  *   stripeSecretKey: string,
  *   supabaseUrl: string,
  *   serviceRoleKey: string,
+ *   capabilitySecret: string,
+ *   rateLimitSecret: string,
  *   successUrl: string,
  *   cancelUrl: string,
  *   allowedOrigins: string[],
@@ -33,7 +44,8 @@ class RequestError extends Error {
  *   status: string,
  *   amount_total: number | string,
  *   currency: string,
- *   expires_at: string
+ *   expires_at: string,
+ *   customer_email: string
  * }} CheckoutAttempt
  */
 
@@ -88,6 +100,18 @@ class RequestError extends Error {
  *   getAttempt: (attemptId: string) => Promise<CheckoutAttempt>,
  *   getOrderItems: (orderId: string) => Promise<OrderItem[]>,
  *   attachSession: (attemptKey: string, sessionId: string, expiresAt: string) => Promise<void>
+ *   registerCapabilities: (input: Record<string, unknown>) => Promise<void>,
+ *   consumeRateLimit: (hash: string, limit: number, windowSeconds: number) => Promise<{
+ *     allowed: boolean,
+ *     retry_after_seconds: number
+ *   }>,
+ *   recoverAttempt?: (input: Record<string, unknown>) => Promise<{
+ *     order_id: string,
+ *     attempt_id: string,
+ *     amount_total: number | string,
+ *     currency: string,
+ *     reused: boolean
+ *   }>
  * }} CheckoutRepository
  */
 
@@ -114,6 +138,7 @@ function validateReturnUrl(value, allowedOrigins, needsSessionPlaceholder) {
     (url.protocol !== "https:" && !(localHost && url.protocol === "http:")) ||
     url.username ||
     url.password ||
+    url.hash ||
     !allowedOrigins.includes(url.origin)
   ) {
     throw new Error("Invalid checkout configuration");
@@ -161,11 +186,18 @@ function readCheckoutConfig(getEnv) {
 
   const supabaseUrl = required("SUPABASE_URL");
   if (!/^https?:\/\//.test(supabaseUrl)) throw new Error("Invalid checkout configuration");
+  const capabilitySecret = required("CHECKOUT_CAPABILITY_SECRET");
+  const rateLimitSecret = required("CHECKOUT_RATE_LIMIT_SECRET");
+  if (capabilitySecret.length < 32 || rateLimitSecret.length < 32) {
+    throw new Error("Invalid checkout configuration");
+  }
 
   return {
     stripeSecretKey: required("STRIPE_SECRET_KEY"),
     supabaseUrl,
     serviceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
+    capabilitySecret,
+    rateLimitSecret,
     successUrl,
     cancelUrl,
     allowedOrigins,
@@ -322,30 +354,7 @@ function priceToPence(value) {
  * @param {CheckoutRepository} repository
  * @param {CheckoutStripe} stripe
  */
-async function createCheckout(config, repository, stripe, input, now = Date.now()) {
-  const holdExpiresAt = new Date(now + CHECKOUT_LIFETIME_MS).toISOString();
-  const attemptResult = await repository.createAttempt({
-    p_attempt_key: input.idempotencyKey,
-    p_order_id: null,
-    p_customer_name: input.customer.name,
-    p_customer_email: input.customer.email,
-    p_customer_phone: input.customer.phone,
-    p_shipping_address: input.customer.shippingAddress,
-    p_items: input.items,
-    p_delivery_fee_pence: config.deliveryFeePence,
-    p_hold_expires_at: holdExpiresAt
-  });
-  const attempt = await repository.getAttempt(attemptResult.attempt_id);
-  if (
-    attempt.id !== attemptResult.attempt_id ||
-    attempt.order_id !== attemptResult.order_id ||
-    attempt.attempt_key !== input.idempotencyKey ||
-    attempt.currency !== "GBP" ||
-    safeInteger(attempt.amount_total) !== safeInteger(attemptResult.amount_total)
-  ) {
-    throw new Error("Checkout attempt data mismatch");
-  }
-
+async function createStripeSession(config, repository, stripe, attempt, attemptKey, handoffToken, now = Date.now()) {
   if (attempt.stripe_checkout_session_id) {
     const existingSession = await stripe.retrieveSession(attempt.stripe_checkout_session_id);
     if (
@@ -388,20 +397,26 @@ async function createCheckout(config, repository, stripe, input, now = Date.now(
       quantity: line.quantity
     };
   });
-  const calculatedTotal = lineItems.reduce(
+  const itemSubtotal = lineItems.reduce(
     (total, line) => total + line.price_data.unit_amount * line.quantity,
-    config.deliveryFeePence
+    0
   );
   const expectedTotal = safeInteger(attempt.amount_total);
-  if (!Number.isSafeInteger(calculatedTotal) || calculatedTotal !== expectedTotal) {
+  const deliveryFeePence = expectedTotal - itemSubtotal;
+  if (
+    !Number.isSafeInteger(itemSubtotal) ||
+    !Number.isSafeInteger(deliveryFeePence) ||
+    deliveryFeePence < 0 ||
+    itemSubtotal + deliveryFeePence !== expectedTotal
+  ) {
     throw new Error("Order amount does not match its item snapshots");
   }
-  if (config.deliveryFeePence > 0) {
+  if (deliveryFeePence > 0) {
     lineItems.push({
       price_data: {
         currency: "gbp",
         product_data: { name: "Delivery" },
-        unit_amount: config.deliveryFeePence
+        unit_amount: deliveryFeePence
       },
       quantity: 1
     });
@@ -410,15 +425,15 @@ async function createCheckout(config, repository, stripe, input, now = Date.now(
   const stableMetadata = {
     order_id: attempt.order_id,
     checkout_attempt_id: attempt.id,
-    attempt_key: input.idempotencyKey
+    attempt_key: attemptKey
   };
   const session = await stripe.createSession({
     mode: "payment",
     line_items: lineItems,
-    success_url: config.successUrl,
-    cancel_url: config.cancelUrl,
+    success_url: appendHandoffFragment(config.successUrl, handoffToken),
+    cancel_url: appendHandoffFragment(config.cancelUrl, handoffToken),
     expires_at: expiresAt,
-    customer_email: input.customer.email,
+    customer_email: attempt.customer_email,
     client_reference_id: attempt.order_id,
     metadata: stableMetadata,
     payment_intent_data: { metadata: stableMetadata }
@@ -434,11 +449,58 @@ async function createCheckout(config, repository, stripe, input, now = Date.now(
     throw new Error("Stripe returned an invalid Checkout Session");
   }
   await repository.attachSession(
-    input.idempotencyKey,
+    attemptKey,
     session.id,
     new Date(session.expires_at * 1000).toISOString()
   );
   return session.url;
+}
+
+async function registerGuestCapabilities(config, repository, orderId, attemptId) {
+  const handoffToken = await deriveGuestCapability(config.capabilitySecret, "handoff", attemptId);
+  const statusToken = await deriveGuestCapability(config.capabilitySecret, "status", orderId);
+  const recoveryToken = await deriveGuestCapability(config.capabilitySecret, "recovery", orderId);
+  const [handoffHash, statusHash, recoveryHash] = await Promise.all([
+    hashGuestCapability(handoffToken),
+    hashGuestCapability(statusToken),
+    hashGuestCapability(recoveryToken)
+  ]);
+  await repository.registerCapabilities({
+    p_order_id: orderId,
+    p_checkout_attempt_id: attemptId,
+    p_handoff_hash: handoffHash,
+    p_status_hash: statusHash,
+    p_recovery_hash: recoveryHash,
+    p_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  });
+  return handoffToken;
+}
+
+async function createCheckout(config, repository, stripe, input, now = Date.now()) {
+  const holdExpiresAt = new Date(now + CHECKOUT_LIFETIME_MS).toISOString();
+  const attemptResult = await repository.createAttempt({
+    p_attempt_key: input.idempotencyKey,
+    p_order_id: null,
+    p_customer_name: input.customer.name,
+    p_customer_email: input.customer.email,
+    p_customer_phone: input.customer.phone,
+    p_shipping_address: input.customer.shippingAddress,
+    p_items: input.items,
+    p_delivery_fee_pence: config.deliveryFeePence,
+    p_hold_expires_at: holdExpiresAt
+  });
+  const attempt = await repository.getAttempt(attemptResult.attempt_id);
+  if (
+    attempt.id !== attemptResult.attempt_id ||
+    attempt.order_id !== attemptResult.order_id ||
+    attempt.attempt_key !== input.idempotencyKey ||
+    attempt.currency !== "GBP" ||
+    safeInteger(attempt.amount_total) !== safeInteger(attemptResult.amount_total)
+  ) {
+    throw new Error("Checkout attempt data mismatch");
+  }
+  const handoffToken = await registerGuestCapabilities(config, repository, attempt.order_id, attempt.id);
+  return createStripeSession(config, repository, stripe, attempt, input.idempotencyKey, handoffToken, now);
 }
 
 /**
@@ -451,6 +513,10 @@ export function createCheckoutHandler(dependencies) {
   return async (request) => {
     let origin = null;
     try {
+      const gatewayAuth = await verifyGatewayRequest(request, dependencies.getEnv, {
+        consumeNonce: dependencies.consumeGatewayNonce
+      });
+      if (gatewayAuth !== "authorized") return gatewayAuthFailure(gatewayAuth);
       const config = readCheckoutConfig(dependencies.getEnv);
       origin = request.headers.get("origin");
       if (origin && !config.allowedOrigins.includes(origin)) {
@@ -460,6 +526,7 @@ export function createCheckoutHandler(dependencies) {
       const headers = new Headers({
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Expose-Headers": "Retry-After",
         "Cache-Control": "no-store",
         "Vary": "Origin"
       });
@@ -483,6 +550,13 @@ export function createCheckoutHandler(dependencies) {
       }
       const input = validateCheckoutBody(body);
       const { repository, stripe } = await dependencies.createServices(config);
+      const rate = await consumeCheckoutRateLimits(
+        repository,
+        config,
+        input.customer.email,
+        input.idempotencyKey
+      );
+      if (!rate.allowed) throw new RequestError(429, rate.retryAfter);
       const url = await createCheckout(config, repository, stripe, input);
       return new Response(JSON.stringify({ url }), {
         status: 200,
@@ -501,12 +575,149 @@ export function createCheckoutHandler(dependencies) {
       if (origin) headers.set("Access-Control-Allow-Origin", origin);
       headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
       headers.set("Access-Control-Allow-Headers", "content-type");
+      headers.set("Access-Control-Expose-Headers", "Retry-After");
+      if (status === 429 && error instanceof RequestError) {
+        headers.set("Retry-After", String(Math.max(1, error.retryAfter)));
+      }
       return new Response(JSON.stringify({
-        error: status === 409
+        error: status === 429
+          ? "Too many checkout attempts. Please wait and try again."
+          : status === 409
           ? "This checkout attempt is no longer available. Start a new checkout."
           : status === 400 || status === 413 || status === 415
             ? "Invalid checkout request."
             : "Checkout is temporarily unavailable."
+      }), { status, headers });
+    }
+  };
+}
+
+/**
+ * @param {{
+ *   getEnv: (name: string) => string | undefined,
+ *   createServices: (config: CheckoutConfig) => Promise<{ repository: CheckoutRepository, stripe: CheckoutStripe }>
+ * }} dependencies
+ */
+export function createCheckoutRecoveryHandler(dependencies) {
+  return async (request) => {
+    let config;
+    let origin = request.headers.get("origin");
+    try {
+      const gatewayAuth = await verifyGatewayRequest(request, dependencies.getEnv, {
+        consumeNonce: dependencies.consumeGatewayNonce
+      });
+      if (gatewayAuth !== "authorized") return gatewayAuthFailure(gatewayAuth);
+      config = readCheckoutConfig(dependencies.getEnv);
+      const headers = new Headers({
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Expose-Headers": "Retry-After",
+        "Cache-Control": "no-store",
+        "Vary": "Origin"
+      });
+      if (origin && !config.allowedOrigins.includes(origin)) return new Response(null, { status: 403 });
+      if (origin) headers.set("Access-Control-Allow-Origin", origin);
+      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
+      if (request.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+          status: 405,
+          headers: new Headers([...headers, ["Content-Type", "application/json"]])
+        });
+      }
+      const contentType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+      if (contentType !== "application/json") throw new RequestError(415);
+      const rawBody = await readLimitedBody(request);
+      let body;
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        throw new RequestError(400);
+      }
+      const root = asRecord(body);
+      rejectUnknownFields(root, ["recoveryToken"]);
+      if (
+        typeof root.recoveryToken !== "string" ||
+        !/^[A-Za-z0-9_-]{43}$/.test(root.recoveryToken)
+      ) {
+        throw new RequestError(400);
+      }
+
+      const { repository, stripe } = await dependencies.createServices(config);
+      const recoveryHash = await hashGuestCapability(root.recoveryToken);
+      const globalRateHash = await hashRateLimitKey(
+        config.rateLimitSecret,
+        "global:recovery"
+      );
+      const globalRate = await repository.consumeRateLimit(globalRateHash, 100, 60);
+      if (!globalRate.allowed) throw new RequestError(429, globalRate.retry_after_seconds);
+      const rateHash = await hashRateLimitKey(config.rateLimitSecret, `recovery:${recoveryHash}`);
+      const rate = await repository.consumeRateLimit(rateHash, 5, 300);
+      if (!rate.allowed) throw new RequestError(429, rate.retry_after_seconds);
+
+      if (!repository.recoverAttempt) throw new Error("Recovery operation is unavailable");
+      const attemptResult = await repository.recoverAttempt({
+        p_recovery_hash: recoveryHash,
+        p_hold_expires_at: new Date(Date.now() + CHECKOUT_LIFETIME_MS).toISOString()
+      });
+      const attempt = await repository.getAttempt(attemptResult.attempt_id);
+      if (
+        attempt.id !== attemptResult.attempt_id ||
+        attempt.order_id !== attemptResult.order_id ||
+        typeof attempt.attempt_key !== "string" ||
+        attempt.currency !== "GBP" ||
+        safeInteger(attempt.amount_total) !== safeInteger(attemptResult.amount_total)
+      ) {
+        throw new Error("Recovered checkout attempt data mismatch");
+      }
+      const handoffToken = await registerGuestCapabilities(
+        config,
+        repository,
+        attempt.order_id,
+        attempt.id
+      );
+      const url = await createStripeSession(
+        config,
+        repository,
+        stripe,
+        attempt,
+        attempt.attempt_key,
+        handoffToken
+      );
+      headers.set("Content-Type", "application/json");
+      return new Response(JSON.stringify({ url }), { status: 200, headers });
+    } catch (error) {
+      const databaseCode = error !== null && typeof error === "object" && "code" in error
+        ? /** @type {{ code?: string }} */ (error).code
+        : undefined;
+      const status = error instanceof RequestError
+        ? error.status
+        : error instanceof Error && error.message === "Invalid checkout request" ||
+            databaseCode === "55000" || databaseCode === "42501"
+          ? 409
+          : 503;
+      if (status === 503) console.error("Stripe checkout recovery operation failed");
+      const headers = new Headers({
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Expose-Headers": "Retry-After",
+        "Cache-Control": "no-store",
+        "Content-Type": "application/json",
+        "Vary": "Origin"
+      });
+      if (config && origin && config.allowedOrigins.includes(origin)) {
+        headers.set("Access-Control-Allow-Origin", origin);
+      }
+      if (status === 429 && error instanceof RequestError) {
+        headers.set("Retry-After", String(Math.max(1, error.retryAfter)));
+      }
+      return new Response(JSON.stringify({
+        error: status === 429
+          ? "Too many recovery attempts. Please wait and try again."
+          : status === 400 || status === 415
+            ? "Invalid recovery request."
+            : status === 409
+              ? "This checkout cannot be safely resumed. Please contact support before paying again."
+              : "Checkout recovery is temporarily unavailable."
       }), { status, headers });
     }
   };
