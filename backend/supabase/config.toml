@@ -1,3 +1,44 @@
+project_id = "beauty-pluz-win2-local"
+
+[api]
+enabled = true
+port = 55421
+
+[db]
+port = 55422
+shadow_port = 55420
+# Set major_version only after confirming the intended database version.
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+enabled = true
+
+[auth]
+enabled = true
+jwt_secret = "env(BEAUTY_PLUZ_LOCAL_JWT_SECRET)"
+# Keep all API-key overrides unset so legacy JWT keys derive from jwt_secret.
+
+[studio]
+enabled = false
+
+[inbucket]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[storage.s3_protocol]
+enabled = false
+
+[analytics]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
 [functions.create-checkout-order]
 verify_jwt = false
 
