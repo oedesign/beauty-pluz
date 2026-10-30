@@ -1,0 +1,8 @@
+[functions.create-checkout-order]
+verify_jwt = false
+
+[functions.verify-sumup-payment]
+verify_jwt = false
+
+[functions.reconcile-sumup-checkouts]
+verify_jwt = true

@@ -39,7 +39,7 @@ declare
   listing jsonb;
   details jsonb;
 begin
-  listing := public.get_admin_orders('Test Customer', 'pending', 10, 0);
+  listing := public.get_admin_orders('00000000-0000-0000-0000-000000000421', 'pending', 10, 0);
   if listing->>'total' <> '1'
      or listing->'orders'->0->>'customerName' <> 'Test Customer'
      or listing->'orders'->0->>'paymentStatus' <> 'unverified'
