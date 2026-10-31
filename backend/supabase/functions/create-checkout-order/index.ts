@@ -4,6 +4,7 @@ import {
   ExpectedCheckout,
   findCheckoutByReference,
   getSumUpConfig,
+  getSumUpRedirectUrl,
   hashCheckoutAccessToken,
   isRecord,
   parseVerifiedCheckout,
@@ -147,6 +148,7 @@ async function ensureHostedCheckout(
   orderId: string,
   accessTokenHash: string,
   merchantCode: string,
+  redirectUrl: string,
 ): Promise<
   { checkoutUrl: string | null; paymentStatus: string; inProgress: boolean }
 > {
@@ -203,7 +205,7 @@ async function ensureHostedCheckout(
   if (existing.length > 1) throw new SumUpError();
   const providerCheckout: VerifiedCheckout = existing.length === 1
     ? parseVerifiedCheckout(existing[0], expected)
-    : await createHostedCheckout(expected, claim.validUntil, sumup);
+    : await createHostedCheckout(expected, claim.validUntil, redirectUrl, sumup);
 
   await callRpc<boolean>("save_sumup_checkout", {
     p_order_id: orderId,
@@ -235,7 +237,11 @@ Deno.serve(async (request: Request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const sumup = getSumUpConfig();
-  if (!network || !hmacKey || !supabaseUrl || !serviceRoleKey || !sumup) {
+  const redirectUrl = getSumUpRedirectUrl();
+  if (
+    !network || !hmacKey || !supabaseUrl || !serviceRoleKey || !sumup ||
+    !redirectUrl
+  ) {
     return safeError(503, "Checkout is temporarily unavailable.");
   }
 
@@ -410,6 +416,7 @@ Deno.serve(async (request: Request) => {
       orderId,
       accessTokenHash,
       sumup.merchantCode,
+      redirectUrl,
     );
     if (payment.inProgress) {
       return jsonResponse(202, { orderId, paymentStatus: "pending" });

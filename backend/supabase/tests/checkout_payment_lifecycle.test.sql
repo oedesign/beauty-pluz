@@ -126,6 +126,29 @@ begin
       'TESTMERCHANT',
       'PAID',
       'SUCCESSFUL',
+      1210,
+      'GBP',
+      null
+    );
+  exception when sqlstate 'P0001' then
+    rejected := true;
+  end;
+  if not rejected
+     or (select payment_status from public.orders where id = failed_order_id) <> 'pending'
+     or (select count(*) from public.order_inventory_reservations
+         where order_id = failed_order_id and status = 'reserved') <> 1 then
+    raise exception 'A successful checkout without a transaction reference changed order or inventory state';
+  end if;
+
+  rejected := false;
+  begin
+    perform public.record_sumup_checkout_verification(
+      failed_order_id,
+      'test-sumup-checkout-failed',
+      failed_order_id::text,
+      'TESTMERCHANT',
+      'PAID',
+      'SUCCESSFUL',
       1024,
       'GBP',
       'TEST-TXN-WRONG-AMOUNT'

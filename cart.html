@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/style.css?v=20260713" />
+  <link rel="stylesheet" href="css/style.css?v=20261031" />
   <link rel="stylesheet" href="css/responsive.css?v=20260713" />
   <link rel="stylesheet" href="css/animations.css?v=20260713" />
 </head>
@@ -129,25 +129,39 @@
 
             <div class="cart-summary__delivery">
               <h3 class="cart-summary__delivery-heading">Delivery Details</h3>
-              <p class="cart-summary__delivery-hint">We'll include this with your order on WhatsApp.</p>
+              <p class="cart-summary__delivery-hint">Required for secure SumUp checkout. WhatsApp orders continue to use your name, phone, and delivery address.</p>
 
               <div class="field">
                 <label for="customer-name">Full Name</label>
-                <input type="text" id="customer-name" name="customerName" autocomplete="name" placeholder="Jane Doe" />
+                <input type="text" id="customer-name" name="customerName" autocomplete="name" maxlength="120" placeholder="Jane Doe" required />
               </div>
 
               <div class="field">
                 <label for="customer-phone">Phone Number</label>
-                <input type="tel" id="customer-phone" name="customerPhone" autocomplete="tel" placeholder="+234 800 000 0000" />
+                <input type="tel" id="customer-phone" name="customerPhone" autocomplete="tel" maxlength="40" placeholder="+234 800 000 0000" required />
               </div>
 
               <div class="field">
                 <label for="customer-address">Delivery Address</label>
-                <textarea id="customer-address" name="customerAddress" rows="2" placeholder="Street, city, state"></textarea>
+                <textarea id="customer-address" name="customerAddress" rows="2" maxlength="500" placeholder="Street, city, state" required></textarea>
+              </div>
+
+              <div class="field">
+                <label for="customer-country">Country code</label>
+                <input type="text" id="customer-country" name="countryCode" autocomplete="country" maxlength="2" placeholder="GB" required />
+              </div>
+
+              <div class="field">
+                <label for="customer-postal-code">Postal code</label>
+                <input type="text" id="customer-postal-code" name="postalCode" autocomplete="postal-code" maxlength="16" placeholder="SW1A 1AA" required />
               </div>
 
               <p class="cart-summary__error" data-delivery-error role="alert" hidden></p>
             </div>
+
+            <button type="button" class="btn btn--rose cart-summary__checkout" data-checkout-sumup disabled>
+              <span data-checkout-label>Pay securely with SumUp</span>
+            </button>
 
             <button type="button" class="btn btn--whatsapp-solid cart-summary__whatsapp" data-order-whatsapp disabled>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -237,7 +251,7 @@
   <script src="js/backend-config.js"></script>
   <script src="js/main.js?v=20260713" defer></script>
   <script src="js/menu.js?v=20260713" defer></script>
-  <script src="js/cart.js?v=20260713" defer></script>
+  <script src="js/cart.js?v=20261031" defer></script>
   <script type="module" src="js/products.js?v=20261007"></script>
   <script type="module" src="js/storefront-settings.js?v=20261007"></script>
 </body>

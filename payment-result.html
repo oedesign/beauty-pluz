@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment status — Beauty Pluz</title>
+  <meta name="description" content="Check the verified status of your Beauty Pluz payment." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=20261031" />
+  <link rel="stylesheet" href="css/responsive.css?v=20260713" />
+  <link rel="stylesheet" href="css/animations.css?v=20260713" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo" aria-label="Beauty Pluz home">
+        <img src="images/beautypluz-logo.webp" alt="" width="85" />
+      </a>
+      <nav class="nav-primary" aria-label="Primary">
+        <ul>
+          <li><a href="shop.html">Shop</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="payment-result-page">
+    <section class="container payment-result" data-result-card data-state="checking" aria-labelledby="payment-result-heading" aria-live="polite">
+      <div class="payment-result__icon" data-result-icon aria-hidden="true">…</div>
+      <p class="payment-result__eyebrow">Beauty Pluz order</p>
+      <h1 id="payment-result-heading" data-result-heading>Checking your payment</h1>
+      <p class="payment-result__message" data-result-message>
+        Please wait while we confirm your payment securely.
+      </p>
+      <p class="payment-result__reference" data-result-reference hidden></p>
+      <button class="btn btn--rose payment-result__retry" type="button" data-verify-again hidden>
+        Check payment status
+      </button>
+      <a class="btn btn--rose payment-result__shop" href="shop.html" data-result-shop hidden>
+        Return to shopping
+      </a>
+      <a class="payment-result__contact" href="contact.html" data-result-contact hidden>
+        Contact Beauty Pluz support
+      </a>
+    </section>
+  </main>
+
+  <footer class="site-footer payment-result__footer">
+    <div class="container">
+      <p>&copy; <span data-current-year></span> Beauty Pluz. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/backend-config.js"></script>
+  <script src="js/main.js?v=20260713" defer></script>
+  <script src="js/cart.js?v=20261031" defer></script>
+  <script src="js/payment-result.js?v=20261031" defer></script>
+</body>
+</html>

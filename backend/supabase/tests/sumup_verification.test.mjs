@@ -115,3 +115,27 @@ test("rejects successful transactions whose amount or currency does not match", 
     SumUpError,
   );
 });
+
+test("rejects checkout identity, merchant, amount, and currency mismatches", async (t) => {
+  const cases = [
+    ["checkout ID", providerCheckout(), { ...expected, checkoutId: "other-checkout" }],
+    ["checkout reference", providerCheckout({ checkout_reference: "other-reference" }), expected],
+    ["merchant", providerCheckout({ merchant_code: "OTHER" }), expected],
+    ["amount", providerCheckout({ amount: 10.24 }), expected],
+    ["currency", providerCheckout({ currency: "USD" }), expected],
+  ];
+
+  for (const [name, checkout, expectedCheckout] of cases) {
+    await t.test(name, () => {
+      assert.throws(
+        () => parseVerifiedCheckout(checkout, expectedCheckout),
+        SumUpError,
+      );
+    });
+  }
+});
+
+test("rejects malformed provider checkout data", () => {
+  assert.throws(() => parseVerifiedCheckout(null, expected), SumUpError);
+  assert.throws(() => parseVerifiedCheckout({}, expected), SumUpError);
+});

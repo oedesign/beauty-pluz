@@ -1,6 +1,5 @@
 import {
   callRpc,
-  ExpectedCheckout,
   findCheckoutByReference,
   getSumUpConfig,
   isRecord,
@@ -8,8 +7,11 @@ import {
   persistVerification,
   retrieveCheckout,
   SumUpError,
-  VerifiedCheckout,
 } from "../_shared/sumup.ts";
+import {
+  hasServiceRoleClaim,
+  reconcileDueCheckouts,
+} from "../_shared/reconciliation.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,21 +34,6 @@ function response(status: number, body: Record<string, number | string>) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
 }
 
-function isTrustedSchedulerRequest(request: Request): boolean {
-  const authorization = request.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) return false;
-  const parts = authorization.slice(7).split(".");
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(
-      atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
-    ) as unknown;
-    return isRecord(payload) && payload.role === "service_role";
-  } catch {
-    return false;
-  }
-}
-
 function parseDueCheckout(value: unknown): DueCheckout | null {
   if (
     !isRecord(value) ||
@@ -62,25 +49,6 @@ function parseDueCheckout(value: unknown): DueCheckout | null {
   return value as unknown as DueCheckout;
 }
 
-async function findAndSaveCheckout(
-  due: DueCheckout,
-  expected: ExpectedCheckout,
-  sumup: NonNullable<ReturnType<typeof getSumUpConfig>>,
-): Promise<VerifiedCheckout | null> {
-  const matches = await findCheckoutByReference(due.checkoutReference, sumup);
-  if (matches.length > 1) throw new SumUpError();
-  if (matches.length === 0) return null;
-
-  const checkout = parseVerifiedCheckout(matches[0], expected);
-  await callRpc<boolean>("save_sumup_checkout", {
-    p_order_id: due.orderId,
-    p_checkout_id: checkout.checkoutId,
-    p_hosted_checkout_url: checkout.hostedCheckoutUrl,
-    p_merchant_code: due.merchantCode,
-  });
-  return checkout;
-}
-
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -88,23 +56,40 @@ Deno.serve(async (request: Request) => {
   if (request.method !== "POST") {
     return response(405, { error: "Use POST for scheduled reconciliation." });
   }
-  if (!isTrustedSchedulerRequest(request)) {
+  // Supabase's gateway verifies the JWT signature because verify_jwt is enabled.
+  if (!hasServiceRoleClaim(request.headers.get("authorization"))) {
     return response(401, { error: "Unauthorized." });
   }
 
   try {
-    await callRpc<number>("release_expired_checkout_reservations", {
-      p_batch_size: 100,
-    });
+    let releasedReservations = await callRpc<number>(
+      "release_expired_checkout_reservations",
+      {
+        p_batch_size: 100,
+      },
+    );
     const rawDue = await callRpc<unknown>("get_due_sumup_checkouts", {
-      p_batch_size: 50,
+      p_batch_size: 2,
     });
     if (!Array.isArray(rawDue)) {
       return response(503, {
         error: "Reconciliation is temporarily unavailable.",
       });
     }
-    if (rawDue.length === 0) return response(200, { reconciled: 0 });
+
+    if (rawDue.length === 0) {
+      return response(200, {
+        examined: 0,
+        paid: 0,
+        pending: 0,
+        failed: 0,
+        cancelled: 0,
+        expired: 0,
+        errors: 0,
+        providerErrors: 0,
+        releasedReservations,
+      });
+    }
 
     const sumup = getSumUpConfig();
     if (!sumup) {
@@ -113,51 +98,40 @@ Deno.serve(async (request: Request) => {
       });
     }
 
-    let reconciled = 0;
-    for (const rawCheckout of rawDue) {
-      const due = parseDueCheckout(rawCheckout);
-      if (!due || due.merchantCode !== sumup.merchantCode) {
-        return response(503, {
-          error: "Reconciliation is temporarily unavailable.",
-        });
-      }
-
-      const expected: ExpectedCheckout = {
-        checkoutId: due.checkoutId ?? undefined,
-        checkoutReference: due.checkoutReference,
-        merchantCode: due.merchantCode,
-        amountMinor: due.amountMinor,
-        currency: due.currency,
-      };
-      let checkout: VerifiedCheckout | null;
-
-      if (due.checkoutId) {
-        checkout = await retrieveCheckout(due.checkoutId, expected, sumup);
-      } else {
-        checkout = await findAndSaveCheckout(due, expected, sumup);
-        if (!checkout) {
-          await callRpc<boolean>("expire_uncreated_sumup_checkout", {
-            p_order_id: due.orderId,
-          });
-          reconciled += 1;
-          continue;
-        }
-      }
-
-      await persistVerification(due.orderId, checkout);
-      reconciled += 1;
-    }
-
-    await callRpc<number>("release_expired_checkout_reservations", {
-      p_batch_size: 100,
+    const counts = await reconcileDueCheckouts(rawDue, {
+      merchantCode: sumup.merchantCode,
+      sumup,
+      SumUpError,
+      parseDueCheckout,
+      findCheckoutByReference,
+      parseVerifiedCheckout,
+      retrieveCheckout,
+      persistVerification,
+      callRpc,
     });
-    return response(200, { reconciled });
+    releasedReservations += await callRpc<number>(
+      "release_expired_checkout_reservations",
+      {
+        p_batch_size: 100,
+      },
+    );
+
+    if (counts.errors > 0) {
+      console.warn("SumUp reconciliation completed with item errors.", {
+        examined: counts.examined,
+        errors: counts.errors,
+        providerErrors: counts.providerErrors,
+      });
+    }
+    return response(200, { ...counts, releasedReservations });
   } catch (error) {
     if (error instanceof SumUpError) {
+      console.error("SumUp reconciliation run failed.");
       return response(503, {
         error: "SumUp reconciliation is temporarily unavailable.",
       });
     }
+    console.error("SumUp reconciliation run failed.");
     return response(503, {
       error: "Reconciliation is temporarily unavailable.",
     });

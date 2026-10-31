@@ -30,14 +30,20 @@ export type VerifiedCheckout = {
 };
 
 export class SumUpError extends Error {
-  constructor(readonly statusCode: number | null = null) {
+  readonly statusCode: number | null;
+
+  constructor(statusCode: number | null = null) {
     super("SumUp request could not be completed.");
+    this.statusCode = statusCode;
   }
 }
 
 export class RpcError extends Error {
-  constructor(readonly code: string | null = null) {
+  readonly code: string | null;
+
+  constructor(code: string | null = null) {
     super("The checkout service rejected the request.");
+    this.code = code;
   }
 }
 
@@ -75,6 +81,27 @@ export function getSumUpConfig(): SumUpConfig | null {
   const merchantCode = Deno.env.get("SUMUP_SANDBOX_MERCHANT_CODE")?.trim();
   if (!apiKey || !merchantCode || merchantCode.length > 40) return null;
   return { apiKey, merchantCode };
+}
+
+export function getSumUpRedirectUrl(): string | null {
+  const siteUrl = Deno.env.get("BEAUTY_PLUZ_SITE_URL");
+  if (!siteUrl) return null;
+  try {
+    const url = new URL(siteUrl);
+    if (
+      url.protocol !== "https:" ||
+      !url.hostname ||
+      url.port ||
+      url.username ||
+      url.password ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash
+    ) return null;
+    return new URL("/payment-result.html", url.origin).href;
+  } catch {
+    return null;
+  }
 }
 
 export function getSupabaseConfig():
@@ -281,6 +308,7 @@ export async function findCheckoutByReference(
 export async function createHostedCheckout(
   expected: ExpectedCheckout,
   validUntil: string,
+  redirectUrl: string,
   config: SumUpConfig,
 ): Promise<VerifiedCheckout> {
   const result = await sumUpRequest("/v0.1/checkouts", config, {
@@ -293,6 +321,7 @@ export async function createHostedCheckout(
       hosted_checkout: { enabled: true },
       merchant_code: expected.merchantCode,
       valid_until: validUntil,
+      redirect_url: redirectUrl,
     }),
   });
   return parseVerifiedCheckout(result, expected);
