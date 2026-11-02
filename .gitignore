@@ -30,6 +30,23 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Supabase CLI local state
+/backend/supabase/.temp/
+
+# Local credentials and signing material
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+credentials.*.json
+secrets.json
+secrets.*.json
+service-account*.json
+.secrets/
+*.secret
+*.secrets
+
 # Test coverage
 coverage/
 
