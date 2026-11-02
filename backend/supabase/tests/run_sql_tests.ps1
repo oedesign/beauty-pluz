@@ -2,11 +2,13 @@ param(
   [ValidateSet(
     "checkout_foundation",
     "checkout_payment_lifecycle",
+    "checkout_inventory_integrity",
     "orders_inventory"
   )]
   [string[]]$Test = @(
     "checkout_foundation",
     "checkout_payment_lifecycle",
+    "checkout_inventory_integrity",
     "orders_inventory"
   )
 )

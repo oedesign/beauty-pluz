@@ -168,6 +168,7 @@ import { publicSupabase } from "./public-supabase.js";
       rating: 4.7,
       reviewCount: 189,
     },
+
   ];
 
   /**

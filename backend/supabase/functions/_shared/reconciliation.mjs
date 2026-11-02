@@ -1,21 +1,20 @@
-export function hasServiceRoleClaim(authorization) {
-  if (typeof authorization !== "string" || !authorization.startsWith("Bearer ")) {
-    return false;
-  }
-  const parts = authorization.slice(7).split(".");
-  if (parts.length !== 3 || !parts[1]) return false;
+export function hasAuthorizedReconciliationRequest(
+  requestSecret,
+  configuredSecret,
+) {
+  if (
+    typeof requestSecret !== "string" ||
+    typeof configuredSecret !== "string" ||
+    !/^[0-9a-fA-F]{64}$/.test(requestSecret) ||
+    !/^[0-9a-fA-F]{64}$/.test(configuredSecret)
+  ) return false;
 
-  try {
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(
-      atob(base64 + "=".repeat((4 - base64.length % 4) % 4)),
-    );
-    return payload !== null &&
-      typeof payload === "object" &&
-      payload.role === "service_role";
-  } catch {
-    return false;
+  let difference = 0;
+  for (let index = 0; index < 64; index += 1) {
+    difference |= requestSecret.charCodeAt(index) ^
+      configuredSecret.charCodeAt(index);
   }
+  return difference === 0;
 }
 
 function createCounts(examined) {

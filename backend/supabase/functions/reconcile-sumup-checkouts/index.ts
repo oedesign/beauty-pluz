@@ -9,13 +9,13 @@ import {
   SumUpError,
 } from "../_shared/sumup.ts";
 import {
-  hasServiceRoleClaim,
+  hasAuthorizedReconciliationRequest,
   reconcileDueCheckouts,
 } from "../_shared/reconciliation.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  "Access-Control-Allow-Headers": "content-type, x-reconciliation-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 };
@@ -56,8 +56,13 @@ Deno.serve(async (request: Request) => {
   if (request.method !== "POST") {
     return response(405, { error: "Use POST for scheduled reconciliation." });
   }
-  // Supabase's gateway verifies the JWT signature because verify_jwt is enabled.
-  if (!hasServiceRoleClaim(request.headers.get("authorization"))) {
+  // This function disables gateway JWT verification and authenticates with its dedicated secret.
+  if (
+    !hasAuthorizedReconciliationRequest(
+      request.headers.get("x-reconciliation-key"),
+      Deno.env.get("RECONCILIATION_API_KEY"),
+    )
+  ) {
     return response(401, { error: "Unauthorized." });
   }
 

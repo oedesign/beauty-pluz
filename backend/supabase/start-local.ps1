@@ -1,22 +1,30 @@
 param(
   [Parameter(Mandatory = $false)]
-  [ValidateSet('Start', 'Stop')]
+  [ValidateSet('Prepare', 'Recover', 'Start', 'Stop')]
   [string]$Action = 'Start',
 
   [Parameter(Mandatory = $true)]
   [ValidateRange(1, 999)]
-  [int]$ConfirmedPostgresMajorVersion
+  [int]$ConfirmedPostgresMajorVersion,
+
+  [Parameter(Mandatory = $false)]
+  [string]$ConfirmIncompleteStageRecovery
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $ProjectId = 'beauty-pluz-win2-local'
+$ApprovedPostgresMajorVersion = 17
 $CredentialTarget = 'BeautyPluz.LocalSupabase.JWTSigningSecret'
 $CliVersion = '2.121.0'
 $MarkerName = '.beauty-pluz-local-stage'
+$ReadyMarkerName = '.beauty-pluz-local-stage-ready'
 
 function Stop-Safely([string]$Message) {
+  if ($Action -eq 'Start') {
+    throw $Message
+  }
   [Console]::Error.WriteLine($Message)
   exit 1
 }
@@ -95,40 +103,94 @@ function Assert-NoDotenvFiles([string]$Directory) {
   }
 }
 
-function Set-ProtectedDirectoryAcl([string]$Directory) {
-  $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
-  $acl = [System.Security.AccessControl.DirectorySecurity]::new()
-  $acl.SetAccessRuleProtection($true, $false)
-  $acl.SetOwner($sid)
-  $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
-    $sid,
-    [System.Security.AccessControl.FileSystemRights]::FullControl,
-    [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit,
-    [System.Security.AccessControl.PropagationFlags]::None,
-    [System.Security.AccessControl.AccessControlType]::Allow
-  )
-  $acl.AddAccessRule($rule)
-  Set-Acl -LiteralPath $Directory -AclObject $acl
-}
-
-function Assert-ProtectedStageAcl([string]$Directory) {
-  $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
-  $acl = Get-Acl -LiteralPath $Directory
-  if (-not $acl.AreAccessRulesProtected -or $acl.Owner -ne $sid.Value) {
-    throw 'The staging directory ACL or owner is not restricted to the current user.'
-  }
-  $rules = @($acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier]))
-  if ($rules.Count -ne 1 -or $rules[0].IdentityReference.Value -ne $sid.Value -or
-    $rules[0].AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow -or
-    ($rules[0].FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -ne [System.Security.AccessControl.FileSystemRights]::FullControl) {
-    throw 'The staging directory ACL is not the expected current-user-only FullControl ACL.'
+function Assert-NoSecretInStage([string]$Directory, [string]$Secret) {
+  if ([string]::IsNullOrEmpty($Secret)) { return }
+  foreach ($file in Get-ChildItem -LiteralPath $Directory -File -Force -Recurse) {
+    $contents = [System.IO.File]::ReadAllText($file.FullName)
+    if ($contents.Contains($Secret)) {
+      throw 'The JWT credential was found in a staging file; refusing to continue.'
+    }
   }
 }
 
-function Initialize-ProtectedStage([string]$Directory) {
-  New-Item -ItemType Directory -Path $Directory -Force | Out-Null
-  Set-ProtectedDirectoryAcl $Directory
-  Assert-ProtectedStageAcl $Directory
+function Assert-NoReparsePointsInStage([string]$Directory) {
+  $pendingDirectories = [System.Collections.Generic.Stack[string]]::new()
+  $pendingDirectories.Push($Directory)
+  while ($pendingDirectories.Count -gt 0) {
+    $currentDirectory = $pendingDirectories.Pop()
+    $currentItem = Get-Item -LiteralPath $currentDirectory -Force -ErrorAction Stop
+    if (($currentItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+      throw 'The staging directory contains a nested reparse point; refusing to use or delete it.'
+    }
+    foreach ($item in Get-ChildItem -LiteralPath $currentDirectory -Force -ErrorAction Stop) {
+      if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw 'The staging directory contains a nested reparse point; refusing to use or delete it.'
+      }
+      if ($item.PSIsContainer) {
+        $pendingDirectories.Push($item.FullName)
+      }
+    }
+  }
+}
+
+function Get-FunctionVerifyJwtSettings([string]$ConfigText) {
+  $settings = @{}
+  $assignmentCounts = @{}
+  $currentFunction = $null
+  foreach ($line in ($ConfigText -split '\r?\n')) {
+    if ($line -match '^[ \t]*\[functions\.([A-Za-z0-9_-]+)\][ \t]*(?:#.*)?$') {
+      $currentFunction = $Matches[1]
+      if ($settings.ContainsKey($currentFunction)) {
+        throw 'A function section is duplicated in a local Supabase config.'
+      }
+      $settings[$currentFunction] = $true
+      $assignmentCounts[$currentFunction] = 0
+      continue
+    }
+    if ($line -match '^[ \t]*\[') {
+      $currentFunction = $null
+      continue
+    }
+    if ($null -ne $currentFunction -and $line -match '^[ \t]*verify_jwt[ \t]*=[ \t]*(.*?)[ \t]*$') {
+      $assignmentCounts[$currentFunction]++
+      if ($assignmentCounts[$currentFunction] -gt 1) {
+        throw 'A function has duplicate verify_jwt settings in a local Supabase config.'
+      }
+      $setting = [regex]::Replace($Matches[1], '[ \t]+#.*$', '').Trim()
+      if ($setting -cnotmatch '^(true|false)$') {
+        throw 'A function has an invalid verify_jwt setting in a local Supabase config.'
+      }
+      $settings[$currentFunction] = ($setting -ceq 'true')
+    }
+  }
+  if ($settings.Count -eq 0) {
+    throw 'The local Supabase config has no Edge Function sections.'
+  }
+  return $settings
+}
+
+function Assert-JwtSecretEnvironmentReference([string]$ConfigText, [string]$Context) {
+  $settings = [regex]::Matches($ConfigText, '(?m)^[ \t]*jwt_secret[ \t]*=[ \t]*([^\r\n]*)$')
+  if ($settings.Count -ne 1 -or
+    [regex]::Replace($settings[0].Groups[1].Value, '[ \t]+#.*$', '').Trim() -cne '"env(BEAUTY_PLUZ_LOCAL_JWT_SECRET)"') {
+    throw "$Context must contain exactly one JWT secret environment reference."
+  }
+}
+
+function Assert-NoUnexpectedCredentialOverrides([string]$ConfigText, [string]$Context) {
+  $credentialKeyPattern = '(?:jwtsecret|anonkey|servicerolekey|publishablekey|secret|password|passwd|pass|pwd|token|credential|apikey|accesskey|privatekey|signingkey|clientsecret|clientkey|webhooksecret|refreshtoken|bearertoken|key$)'
+  foreach ($line in ($ConfigText -split '\r?\n')) {
+    if ($line -match '^[ \t]*([A-Za-z0-9_-]+)[ \t]*=') {
+      $key = $Matches[1]
+      $normalizedKey = ($key -replace '[-_]', '').ToLowerInvariant()
+      if ($key -ceq 'jwt_secret') {
+        continue
+      }
+      if ($normalizedKey -match $credentialKeyPattern) {
+        throw "$Context contains an unexpected credential override."
+      }
+    }
+  }
 }
 
 function Assert-StageIdentity([string]$Directory, [string]$ConfigPath) {
@@ -149,25 +211,82 @@ function Assert-StageIdentity([string]$Directory, [string]$ConfigPath) {
   }
 }
 
+function Assert-StagedConfig([string]$ConfigPath, [int]$MajorVersion, [string]$ExpectedConfigPath) {
+  if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
+    throw 'The persistent staging directory has no config.toml; refusing to reuse or delete it.'
+  }
+  $config = [System.IO.File]::ReadAllText($ConfigPath)
+  Assert-NoUnexpectedCredentialOverrides $config 'The staged config'
+  Assert-JwtSecretEnvironmentReference $config 'The staged config'
+  if ($config -notmatch ('(?m)^project_id\s*=\s*"' + [regex]::Escape($ProjectId) + '"\s*$') -or
+    $config -notmatch ('(?m)^major_version\s*=\s*' + [string]$MajorVersion + '\s*$')) {
+    throw 'The staged config project ID, PostgreSQL version, or JWT environment reference does not match.'
+  }
+  if (-not (Test-Path -LiteralPath $ExpectedConfigPath -PathType Leaf)) {
+    throw 'The intended local Supabase config is missing; refusing to validate staged function auth settings.'
+  }
+  $expectedSettings = Get-FunctionVerifyJwtSettings ([System.IO.File]::ReadAllText($ExpectedConfigPath))
+  $stagedSettings = Get-FunctionVerifyJwtSettings $config
+  foreach ($name in @($expectedSettings.Keys) + @($stagedSettings.Keys) | Sort-Object -Unique) {
+    $expectedValue = $true
+    $stagedValue = $true
+    if ($expectedSettings.ContainsKey($name)) { $expectedValue = $expectedSettings[$name] }
+    if ($stagedSettings.ContainsKey($name)) { $stagedValue = $stagedSettings[$name] }
+    if ($expectedValue -ne $stagedValue) {
+      throw 'A staged Edge Function verify_jwt setting differs from the intended local config.'
+    }
+  }
+  foreach ($name in @('create-checkout-order', 'verify-sumup-payment', 'reconcile-sumup-checkouts')) {
+    $section = '[functions.' + $name + ']'
+    $match = [regex]::Match($config, '(?ms)^' + [regex]::Escape($section) + '\s*\n.*?(?=^\[|\z)')
+    if (-not $match.Success -or $match.Value -notmatch '(?m)^enabled\s*=\s*false\s*$') {
+      throw 'A checkout function is not explicitly disabled in the staged config.'
+    }
+  }
+  if ($config -match '(?ms)^\[edge_runtime\]\s*\nenabled\s*=\s*true') {
+    throw 'Edge Runtime must remain disabled in the staged local config.'
+  }
+}
+
+function Assert-StageReady([string]$Directory, [bool]$AllowCompleteLegacyStage = $false) {
+  $readyPath = Join-Path $Directory $ReadyMarkerName
+  if (-not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
+    $legacyConfig = Join-Path $Directory 'supabase\config.toml'
+    $legacyMigrations = Join-Path $Directory 'supabase\migrations'
+    $legacyFunctions = Join-Path $Directory 'supabase\functions'
+    if ($AllowCompleteLegacyStage -and
+      (Test-Path -LiteralPath $legacyConfig -PathType Leaf) -and
+      (Test-Path -LiteralPath $legacyMigrations -PathType Container) -and
+      (Test-Path -LiteralPath $legacyFunctions -PathType Container)) {
+      return
+    }
+    throw 'The persistent staging directory is incomplete; it has been preserved for recovery.'
+  }
+  $readyMarker = [System.IO.File]::ReadAllText($readyPath)
+  if ($readyMarker -cne "beauty-pluz-local-stage-ready-v1`nproject_id=$ProjectId`n") {
+    throw 'The staging readiness marker does not match this project; refusing to reuse or delete it.'
+  }
+}
+
 function Set-StagedConfig([string]$SourceConfig, [string]$DestinationConfig) {
   $text = [System.IO.File]::ReadAllText($SourceConfig) -replace "`r`n?", "`n"
   if ($text -notmatch ('(?m)^project_id\s*=\s*"' + [regex]::Escape($ProjectId) + '"\s*$')) {
     throw 'Repository config does not have the approved isolated project ID.'
   }
-  if ([regex]::Matches($text, '(?m)^jwt_secret\s*=\s*"env\(BEAUTY_PLUZ_LOCAL_JWT_SECRET\)"\s*$').Count -ne 1) {
-    throw 'Repository config must contain exactly one approved JWT secret env reference.'
-  }
-  if ($text -match '(?im)^\s*(?:anon_key|service_role_key|publishable_key|secret_key|signing_keys_path)\s*=') {
-    throw 'API-key and signing-key overrides must remain unset.'
-  }
+  Assert-NoUnexpectedCredentialOverrides $text 'Repository config'
+  Assert-JwtSecretEnvironmentReference $text 'Repository config'
 
   if ($text -match '(?m)^\s*major_version\s*=') {
     $configuredVersion = [regex]::Match($text, '(?m)^\s*major_version\s*=\s*(\d+)\s*$').Groups[1].Value
-    if ($configuredVersion -ne [string]$ConfirmedPostgresMajorVersion) {
-      throw 'Configured PostgreSQL major version differs from the explicit confirmation.'
+    if ($configuredVersion -ne [string]$ApprovedPostgresMajorVersion) {
+      throw 'Repository PostgreSQL major version differs from the approved local version.'
     }
   } else {
-    $text = [regex]::new('(?m)^\[db\]\s*$').Replace($text, "[db]`nmajor_version = $ConfirmedPostgresMajorVersion", 1)
+    $dbSection = [regex]::new('(?m)^\[db\]\s*$')
+    if (-not $dbSection.IsMatch($text)) {
+      throw 'Repository config is missing the database section required for the approved PostgreSQL version.'
+    }
+    $text = $dbSection.Replace($text, "[db]`nmajor_version = $ApprovedPostgresMajorVersion", 1)
   }
 
   foreach ($name in @('create-checkout-order', 'verify-sumup-payment', 'reconcile-sumup-checkouts')) {
@@ -187,9 +306,8 @@ function Set-StagedConfig([string]$SourceConfig, [string]$DestinationConfig) {
   if ($text -match '(?ms)^\[edge_runtime\]\s*\nenabled\s*=\s*true') {
     throw 'Edge Runtime must remain disabled in the staged local config.'
   }
-  if ([regex]::Matches($text, '(?m)^jwt_secret\s*=\s*"env\(BEAUTY_PLUZ_LOCAL_JWT_SECRET\)"\s*$').Count -ne 1) {
-    throw 'Staged config must retain exactly one JWT secret env reference.'
-  }
+  Assert-NoUnexpectedCredentialOverrides $text 'Staged config'
+  Assert-JwtSecretEnvironmentReference $text 'Staged config'
   [System.IO.File]::WriteAllText($DestinationConfig, $text, [System.Text.UTF8Encoding]::new($false))
 }
 
@@ -294,7 +412,8 @@ function Assert-OutsideRepository([string]$Directory, [string]$RepositoryRoot) {
 function Assert-ProtectedStageAcl([string]$Directory) {
   $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
   $acl = Get-Acl -LiteralPath $Directory
-  if (-not $acl.AreAccessRulesProtected -or $acl.Owner -ne $sid.Value) {
+  $ownerSid = $acl.GetOwner([System.Security.Principal.SecurityIdentifier])
+  if (-not $acl.AreAccessRulesProtected -or $ownerSid.Value -ne $sid.Value) {
     throw 'The staging directory ACL or owner is not restricted to the current user.'
   }
   $rules = @($acl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier]))
@@ -325,24 +444,6 @@ function Initialize-ProtectedStage([string]$Directory) {
   New-Item -ItemType Directory -Path $Directory -Force | Out-Null
   Set-ProtectedDirectoryAcl $Directory
   Assert-ProtectedStageAcl $Directory
-}
-
-function Assert-StageIdentity([string]$Directory, [string]$ConfigPath) {
-  $markerPath = Join-Path $Directory $MarkerName
-  if (-not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
-    throw 'The persistent staging directory exists without this project marker; refusing to reuse or delete it.'
-  }
-  $marker = [System.IO.File]::ReadAllText($markerPath)
-  if ($marker -cne "beauty-pluz-local-stage-v1`nproject_id=$ProjectId`n") {
-    throw 'The persistent staging directory marker does not match this project; refusing to reuse or delete it.'
-  }
-  if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
-    throw 'The marked staging directory has no config.toml; refusing to recreate or delete it.'
-  }
-  $config = [System.IO.File]::ReadAllText($ConfigPath)
-  if ($config -notmatch ('(?m)^project_id\s*=\s*"' + [regex]::Escape($ProjectId) + '"\s*$')) {
-    throw 'The staged config project ID does not match the project marker.'
-  }
 }
 
 function Get-ClearEnvironmentNames {
@@ -380,12 +481,21 @@ function Test-RunningContainerMountsStage([string]$StageDirectory) {
     if ($inspect.ExitCode -ne 0) {
       throw 'Docker could not inspect a running container; the staging directory will be preserved.'
     }
+    if ([string]::IsNullOrWhiteSpace($inspect.Stdout)) {
+      throw 'Docker returned empty mount details; the staging directory will be preserved.'
+    }
     try {
       $mounts = $inspect.Stdout | ConvertFrom-Json
     } catch {
       throw 'Docker mount details could not be parsed; the staging directory will be preserved.'
     }
+    if ($null -eq $mounts) {
+      throw 'Docker returned empty mount details; the staging directory will be preserved.'
+    }
     foreach ($mount in $mounts) {
+      if ($null -eq $mount -or $null -eq $mount.PSObject.Properties['Source']) {
+        throw 'Docker returned incomplete mount details; the staging directory will be preserved.'
+      }
       if (-not $mount.Source) { continue }
       $source = ([string]$mount.Source).TrimEnd('\', '/').Replace('/', '\').ToLowerInvariant()
       $sourcePosix = $source -replace '^([a-z]):', '/run/desktop/mnt/host/$1' -replace '\\', '/'
@@ -398,58 +508,148 @@ function Test-RunningContainerMountsStage([string]$StageDirectory) {
   return $false
 }
 
-if (-not $PSBoundParameters.ContainsKey('ConfirmedPostgresMajorVersion')) {
-  Stop-Safely 'Operation blocked: confirm the intended PostgreSQL major version and pass -ConfirmedPostgresMajorVersion.'
+function Recover-IncompleteStage([string]$Directory, [string]$RepositoryRoot, [string]$ConfirmedProjectId) {
+  if ($ConfirmedProjectId -cne $ProjectId) {
+    throw 'Incomplete-stage recovery requires explicit confirmation using the exact project ID.'
+  }
+  $expectedDirectory = [System.IO.Path]::GetFullPath((Get-StageRoot)).TrimEnd('\', '/')
+  $providedDirectory = [System.IO.Path]::GetFullPath($Directory).TrimEnd('\', '/')
+  if (-not $providedDirectory.Equals($expectedDirectory, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Incomplete-stage recovery is restricted to this project staging directory.'
+  }
+  Assert-OutsideRepository $providedDirectory $RepositoryRoot
+  if (-not (Test-Path -LiteralPath $providedDirectory -PathType Container)) {
+    throw 'Incomplete-stage recovery requires the existing staging directory.'
+  }
+  Assert-NoReparsePointsInStage $providedDirectory
+  $children = @(Get-ChildItem -LiteralPath $providedDirectory -Force -ErrorAction Stop)
+  if ($children.Count -ne 0) {
+    throw 'Incomplete-stage recovery requires an empty directory; existing contents are preserved.'
+  }
+  Assert-ProtectedStageAcl $providedDirectory
+  if (Test-RunningContainerMountsStage $providedDirectory) {
+    throw 'Incomplete-stage recovery is blocked because a running container mounts the staging directory.'
+  }
+  $markerPath = Join-Path $providedDirectory $MarkerName
+  [System.IO.File]::WriteAllText(
+    $markerPath,
+    "beauty-pluz-local-stage-v1`nproject_id=$ProjectId`n",
+    [System.Text.UTF8Encoding]::new($false)
+  )
 }
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$sourceConfig = Join-Path $PSScriptRoot 'config.toml'
-$stageRoot = Get-StageRoot
-Assert-OutsideRepository $stageRoot $repoRoot
-$stageSupabase = Join-Path $stageRoot 'supabase'
-$stageConfig = Join-Path $stageSupabase 'config.toml'
-$stageFunctions = Join-Path $stageSupabase 'functions'
 $secret = $null
 $cliResult = $null
-$removeStageAfterStop = $false
+$failureStage = 'launcher validation'
+$safeFailureDetail = $null
 
 try {
-  $secret = Get-CredentialSecret $CredentialTarget
-  if ([string]::IsNullOrWhiteSpace($secret) -or $secret.Length -lt 32 -or $secret -notmatch '^[A-Za-z0-9_+/=-]{32,}$') {
-    Stop-Safely 'Operation blocked: the local JWT credential is missing, empty, or invalid in Windows Credential Manager.'
+  if (-not $PSBoundParameters.ContainsKey('ConfirmedPostgresMajorVersion')) {
+    Stop-Safely 'Operation blocked: confirm the intended PostgreSQL major version and pass -ConfirmedPostgresMajorVersion.'
+  }
+  if ($ConfirmedPostgresMajorVersion -ne $ApprovedPostgresMajorVersion) {
+    Stop-Safely "Operation blocked: this isolated local environment is approved for PostgreSQL major version $ApprovedPostgresMajorVersion only."
   }
 
-  if (Test-Path -LiteralPath $stageRoot) {
+  $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+  $sourceConfig = Join-Path $PSScriptRoot 'config.toml'
+  $stageRoot = Get-StageRoot
+  Assert-OutsideRepository $stageRoot $repoRoot
+  $stageRootExisted = Test-Path -LiteralPath $stageRoot -PathType Container
+  $stageSupabase = Join-Path $stageRoot 'supabase'
+  $stageConfig = Join-Path $stageSupabase 'config.toml'
+  $stageFunctions = Join-Path $stageSupabase 'functions'
+
+  if ($Action -eq 'Start') {
+    $failureStage = 'Credential Manager validation'
+    $secret = Get-CredentialSecret $CredentialTarget
+    if ([string]::IsNullOrWhiteSpace($secret) -or $secret.Length -lt 32 -or $secret -notmatch '^[A-Za-z0-9_+/=-]{32,}$') {
+      Stop-Safely 'Start blocked: the local JWT credential is missing, empty, or invalid in Windows Credential Manager.'
+    }
+  }
+
+  if ($Action -eq 'Recover') {
+    $failureStage = 'incomplete-stage recovery checks'
+    Recover-IncompleteStage $stageRoot $repoRoot $ConfirmIncompleteStageRecovery
+  } elseif (Test-Path -LiteralPath $stageRoot) {
+    $failureStage = 'staging identity and ACL validation'
+    $stageItem = Get-Item -LiteralPath $stageRoot -Force
+    if (($stageItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+      Stop-Safely 'Operation blocked: the staging path is a reparse point; refusing to reuse or delete it.'
+    }
+    Assert-NoReparsePointsInStage $stageRoot
     Assert-StageIdentity $stageRoot $stageConfig
     Assert-ProtectedStageAcl $stageRoot
   } elseif ($Action -eq 'Stop') {
     Stop-Safely 'Stop blocked: the persistent Beauty Pluz staging directory does not exist.'
   } else {
+    $failureStage = 'protected staging directory initialization'
     Initialize-ProtectedStage $stageRoot
-  }
-
-  New-Item -ItemType Directory -Path $stageSupabase -Force | Out-Null
-  Assert-NoDotenvFiles $stageRoot
-  $markerPath = Join-Path $stageRoot $MarkerName
-  if (-not (Test-Path -LiteralPath $markerPath)) {
+    $markerPath = Join-Path $stageRoot $MarkerName
     [System.IO.File]::WriteAllText($markerPath, "beauty-pluz-local-stage-v1`nproject_id=$ProjectId`n", [System.Text.UTF8Encoding]::new($false))
   }
 
-  if ($Action -eq 'Start') {
-    Set-StagedConfig $sourceConfig $stageConfig
-    New-Item -ItemType Directory -Path $stageFunctions -Force | Out-Null
-    Copy-ProjectFilesWithoutDotenv (Join-Path $PSScriptRoot 'migrations') (Join-Path $stageSupabase 'migrations')
-    Copy-ProjectFilesWithoutDotenv (Join-Path $PSScriptRoot 'functions') $stageFunctions
-    Assert-NoDotenvFiles $stageRoot
-  } else {
-    $stagedText = [System.IO.File]::ReadAllText($stageConfig)
-    if ($stagedText -notmatch ('(?m)^project_id\s*=\s*"' + [regex]::Escape($ProjectId) + '"\s*$') -or
-      $stagedText -notmatch ('(?m)^major_version\s*=\s*' + [string]$ConfirmedPostgresMajorVersion + '\s*$') -or
-      $stagedText -notmatch '(?m)^jwt_secret\s*=\s*"env\(BEAUTY_PLUZ_LOCAL_JWT_SECRET\)"\s*$') {
-      Stop-Safely 'Stop blocked: staged project ID, confirmed PostgreSQL version, or JWT reference does not match.'
+  $failureStage = 'staging reparse-point and dotenv validation'
+  Assert-NoReparsePointsInStage $stageRoot
+  Assert-NoDotenvFiles $stageRoot
+
+  if ($Action -in @('Prepare', 'Start') -and $stageRootExisted) {
+    $readyPath = Join-Path $stageRoot $ReadyMarkerName
+    if (-not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
+      $failureStage = 'staging Docker mount validation'
+      if (Test-RunningContainerMountsStage $stageRoot) {
+        $safeFailureDetail = 'The incomplete staging directory is mounted by a running container and was preserved.'
+        throw 'Staging reuse is blocked.'
+      }
+    }
+    $failureStage = 'existing staging readiness validation'
+    $safeFailureDetail = 'The existing staging directory was preserved. Its readiness marker is missing or invalid; use the separately approved Recover action with the exact project ID only after its checks pass.'
+    Assert-StageReady $stageRoot
+    $safeFailureDetail = $null
+  }
+
+  if ($Action -in @('Prepare', 'Recover', 'Start')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $stageRoot $ReadyMarkerName) -PathType Leaf)) {
+      $failureStage = 'staging Docker mount validation'
+      if (Test-RunningContainerMountsStage $stageRoot) {
+        Stop-Safely "$Action blocked: an incomplete stage is mounted by a running container; the stage was preserved."
+      }
+      $failureStage = 'staged config and project-file preparation'
+      New-Item -ItemType Directory -Path $stageSupabase -Force | Out-Null
+      Set-StagedConfig $sourceConfig $stageConfig
+      New-Item -ItemType Directory -Path $stageFunctions -Force | Out-Null
+      Copy-ProjectFilesWithoutDotenv (Join-Path $PSScriptRoot 'migrations') (Join-Path $stageSupabase 'migrations')
+      Copy-ProjectFilesWithoutDotenv (Join-Path $PSScriptRoot 'functions') $stageFunctions
+      Assert-NoReparsePointsInStage $stageRoot
+      Assert-NoDotenvFiles $stageRoot
+      Assert-NoSecretInStage $stageRoot $secret
+      $readyPath = Join-Path $stageRoot $ReadyMarkerName
+      [System.IO.File]::WriteAllText($readyPath, "beauty-pluz-local-stage-ready-v1`nproject_id=$ProjectId`n", [System.Text.UTF8Encoding]::new($false))
+    }
+    $failureStage = 'staged readiness, PostgreSQL, JWT, and function-auth validation'
+    Assert-StageReady $stageRoot
+    Assert-StagedConfig $stageConfig $ApprovedPostgresMajorVersion $sourceConfig
+    Assert-NoReparsePointsInStage $stageRoot
+    Assert-NoSecretInStage $stageRoot $secret
+  } elseif ($Action -eq 'Stop') {
+    Assert-StageReady $stageRoot $true
+    Assert-StagedConfig $stageConfig $ApprovedPostgresMajorVersion $sourceConfig
+    Assert-NoReparsePointsInStage $stageRoot
+    Assert-NoSecretInStage $stageRoot $null
+  }
+
+  if ($Action -in @('Prepare', 'Recover')) {
+    [Console]::Out.WriteLine("Local Supabase staging prepared successfully at: $stageRoot")
+    return
+  }
+
+  if ($Action -eq 'Stop') {
+    if (-not (Test-Path -LiteralPath $stageConfig -PathType Leaf)) {
+      Stop-Safely 'Stop blocked: the staged config.toml is missing; the staging directory was preserved.'
     }
   }
 
+  $failureStage = 'local Supabase CLI validation'
   $command = Find-LocalSupabaseCli $PSScriptRoot
   if (-not $command) {
     Stop-Safely 'Operation blocked: local npm Supabase CLI version 2.121.0 was not found.'
@@ -459,14 +659,14 @@ try {
     Stop-Safely 'Operation blocked: the selected local Supabase CLI binary did not report version 2.121.0.'
   }
 
+  $failureStage = 'Supabase process invocation'
   $verb = if ($Action -eq 'Start') { 'start' } else { 'stop' }
   $cliResult = Invoke-CapturedProcess `
     (Join-Path ([Environment]::SystemDirectory) 'cmd.exe') `
     ('/d /s /c ""{0}" {1}"' -f $command.Shim, $verb) `
     $stageRoot $clearNames $secret
-  Write-RedactedOutput $cliResult.Stdout $secret
-  foreach ($line in ($cliResult.Stderr -split '\r?\n')) {
-    if ($line) { [Console]::Error.WriteLine((Write-RedactedLine $line $secret)) }
+  if ($Action -eq 'Stop') {
+    Write-CliResult $cliResult $secret
   }
   if ($cliResult.ExitCode -ne 0) {
     if ($Action -eq 'Start') {
@@ -478,13 +678,27 @@ try {
   if ($Action -eq 'Start') {
     [Console]::Out.WriteLine("Supabase start succeeded. Persistent staging remains at: $stageRoot")
   } else {
+    $failureStage = 'staging cleanup safety checks'
+    Assert-NoReparsePointsInStage $stageRoot
     if (Test-RunningContainerMountsStage $stageRoot) {
       Stop-Safely 'Supabase stop succeeded, but a running container still mounts the staging directory; it has been preserved.'
     }
-    $removeStageAfterStop = $true
+    try {
+      $failureStage = 'staging directory cleanup'
+      Assert-NoReparsePointsInStage $stageRoot
+      Remove-Item -LiteralPath $stageRoot -Recurse -Force -ErrorAction Stop
+      [Console]::Out.WriteLine('Supabase stopped and no running container mounts the stage. Persistent staging was removed.')
+    } catch {
+      Stop-Safely 'Supabase stopped, but staging cleanup failed; inspect the persistent staging directory before retrying.'
+    }
   }
 } catch {
-  Stop-Safely "Operation failed safely: $($_.Exception.Message)"
+  $safeFailureMessage = "Operation failed safely during $failureStage; no credential values or exception details are included."
+  [Console]::Error.WriteLine($safeFailureMessage)
+  if ($safeFailureDetail) {
+    [Console]::Error.WriteLine($safeFailureDetail)
+  }
+  exit 1
 } finally {
   if ($cliResult) {
     $cliResult.Stdout = $null
@@ -492,12 +706,4 @@ try {
   }
   $cliResult = $null
   if ($secret) { $secret = $null }
-  if ($removeStageAfterStop -and (Test-Path -LiteralPath $stageRoot)) {
-    try {
-      Remove-Item -LiteralPath $stageRoot -Recurse -Force -ErrorAction Stop
-      [Console]::Out.WriteLine('Supabase stopped; no running container mounts the stage. Persistent staging was removed.')
-    } catch {
-      [Console]::Error.WriteLine('Supabase stopped, but staging cleanup failed. The directory was preserved for manual recovery.')
-    }
-  }
 }

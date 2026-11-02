@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  hasServiceRoleClaim,
+  hasAuthorizedReconciliationRequest,
   reconcileDueCheckouts,
 } from "../functions/_shared/reconciliation.mjs";
 
@@ -53,16 +53,42 @@ function dependencies(overrides = {}) {
   };
 }
 
-function jwtWithRole(role) {
-  const payload = Buffer.from(JSON.stringify({ role })).toString("base64url");
-  return `Bearer header.${payload}.signature`;
-}
+const reconciliationSecret = "a".repeat(64);
 
-test("accepts only a service-role claim after the gateway verifies the JWT", () => {
-  assert.equal(hasServiceRoleClaim(jwtWithRole("service_role")), true);
-  assert.equal(hasServiceRoleClaim(jwtWithRole("anon")), false);
-  assert.equal(hasServiceRoleClaim(null), false);
-  assert.equal(hasServiceRoleClaim("Bearer not-a-jwt"), false);
+test("accepts the configured 256-bit hexadecimal reconciliation secret", () => {
+  assert.equal(
+    hasAuthorizedReconciliationRequest(
+      reconciliationSecret,
+      reconciliationSecret,
+    ),
+    true,
+  );
+});
+
+test("rejects incorrect, absent, or malformed reconciliation secrets", () => {
+  assert.equal(
+    hasAuthorizedReconciliationRequest("b".repeat(64), reconciliationSecret),
+    false,
+  );
+  assert.equal(
+    hasAuthorizedReconciliationRequest(null, reconciliationSecret),
+    false,
+  );
+  assert.equal(
+    hasAuthorizedReconciliationRequest("a".repeat(63), reconciliationSecret),
+    false,
+  );
+  assert.equal(
+    hasAuthorizedReconciliationRequest("z".repeat(64), reconciliationSecret),
+    false,
+  );
+  assert.equal(
+    hasAuthorizedReconciliationRequest(
+      reconciliationSecret,
+      "not-a-256-bit-hex-secret",
+    ),
+    false,
+  );
 });
 
 test("counts a verified successful payment", async () => {

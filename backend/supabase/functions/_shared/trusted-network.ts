@@ -1,5 +1,3 @@
-import { callRpc } from "./sumup.ts";
-
 const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
 export function trustedClientNetwork(request: Request): string | null {
@@ -47,32 +45,4 @@ export function trustedClientNetwork(request: Request): string | null {
     words.slice(0, 4).map((word) => Number.parseInt(word, 16).toString(16))
       .join(":")
   }::/64`;
-}
-
-export async function consumeCheckoutRequestLimit(
-  network: string,
-): Promise<boolean> {
-  const keyMaterial = Deno.env.get("CHECKOUT_RATE_LIMIT_HMAC_KEY");
-  if (!keyMaterial || new TextEncoder().encode(keyMaterial).byteLength < 32) {
-    throw new Error("Checkout rate-limit configuration is unavailable.");
-  }
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(keyMaterial),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const digest = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(network),
-  );
-  const identity = Array.from(
-    new Uint8Array(digest),
-    (byte) => byte.toString(16).padStart(2, "0"),
-  ).join("");
-  return await callRpc<boolean>("consume_checkout_request_limit", {
-    p_identity_hash: `\\x${identity}`,
-  });
 }

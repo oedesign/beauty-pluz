@@ -1,6 +1,5 @@
 import {
   callRpc,
-  ExpectedCheckout,
   findCheckoutByReference,
   getSumUpConfig,
   hashCheckoutAccessToken,
@@ -10,12 +9,12 @@ import {
   retrieveCheckout,
   RpcError,
   SumUpError,
-  VerifiedCheckout,
 } from "../_shared/sumup.ts";
+import type { ExpectedCheckout, VerifiedCheckout } from "../_shared/sumup.ts";
 import {
   consumeCheckoutRequestLimit,
-  trustedClientNetwork,
-} from "../_shared/trusted-network.ts";
+  createCheckoutRateLimitIdentity,
+} from "../_shared/checkout-rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,24 +48,6 @@ Deno.serve(async (request: Request) => {
     return response(405, { error: "Use POST to check payment status." });
   }
 
-  const network = trustedClientNetwork(request);
-  if (!network) {
-    return response(503, {
-      error: "Payment status is temporarily unavailable.",
-    });
-  }
-  try {
-    if (!await consumeCheckoutRequestLimit(network)) {
-      return response(429, {
-        error: "Too many payment status checks. Please wait and try again.",
-      });
-    }
-  } catch {
-    return response(503, {
-      error: "Payment status is temporarily unavailable.",
-    });
-  }
-
   const contentType = request.headers.get("content-type") || "";
   if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
     return response(415, { error: "Payment status requests must use JSON." });
@@ -95,6 +76,29 @@ Deno.serve(async (request: Request) => {
     tokenHash = await hashCheckoutAccessToken(payload.checkoutAccessToken);
   } catch {
     return response(400, { error: "The payment status request is invalid." });
+  }
+
+  const hmacKey = Deno.env.get("CHECKOUT_RATE_LIMIT_HMAC_KEY");
+  if (!hmacKey) {
+    return response(503, {
+      error: "Payment status is temporarily unavailable.",
+    });
+  }
+  try {
+    const identityHash = await createCheckoutRateLimitIdentity(
+      "payment-token",
+      tokenHash,
+      hmacKey,
+    );
+    if (!await consumeCheckoutRequestLimit(identityHash)) {
+      return response(429, {
+        error: "Too many payment status checks. Please wait and try again.",
+      });
+    }
+  } catch {
+    return response(503, {
+      error: "Payment status is temporarily unavailable.",
+    });
   }
 
   try {

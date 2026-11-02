@@ -8,9 +8,12 @@ const root = new URL("../../..", import.meta.url).pathname.replace(
 const prefix = `bp-concurrency-${randomUUID().replaceAll("-", "")}`;
 const trackedProductId = `${prefix}-tracked`;
 const untrackedProductId = `${prefix}-untracked`;
+const limitedProductId = `${prefix}-limited`;
 const checkoutKey = randomUUID();
+const competingCheckoutKeys = [randomUUID(), randomUUID()];
 const checkoutIdentity = randomBytes(32).toString("hex");
 const limiterIdentity = randomBytes(32).toString("hex");
+const competingIdentities = [randomBytes(32).toString("hex"), randomBytes(32).toString("hex")];
 
 function runSql(sql) {
   return new Promise((resolve, reject) => {
@@ -61,17 +64,22 @@ function runSql(sql) {
   });
 }
 
-function rateLimitCall(identity, checkout = false) {
+function rateLimitCall(
+  identity,
+  checkout = false,
+  idempotencyKey = checkoutKey,
+  checkoutItems = `[{"id":"${trackedProductId}","quantity":2},{"id":"${untrackedProductId}","quantity":1}]`,
+) {
   const checkoutCall = checkout
     ? `perform public.create_checkout_order(
-        '${checkoutKey}',
+        '${idempotencyKey}',
         'Concurrent Test Customer',
         '+441234567890',
         '1 Concurrent Test Street',
         'ZZ',
         'TEST123',
         decode(repeat('01', 32), 'hex'),
-        '[{"id":"${trackedProductId}","quantity":2},{"id":"${untrackedProductId}","quantity":1}]'::jsonb
+        '${checkoutItems}'::jsonb
       );`
     : "";
   return `set role service_role;
@@ -114,8 +122,15 @@ async function cleanup() {
       select id from public.orders where checkout_idempotency_key = '${checkoutKey}'
     );
     delete from public.orders where checkout_idempotency_key = '${checkoutKey}';
+    delete from public.order_inventory_reservations
+    where order_id in (
+      select id from public.orders
+      where checkout_idempotency_key in ('${competingCheckoutKeys[0]}', '${competingCheckoutKeys[1]}')
+    );
+    delete from public.orders
+    where checkout_idempotency_key in ('${competingCheckoutKeys[0]}', '${competingCheckoutKeys[1]}');
     delete from public.products
-    where id in ('${trackedProductId}', '${untrackedProductId}');`);
+    where id in ('${trackedProductId}', '${untrackedProductId}', '${limitedProductId}');`);
   if (!cleanupResult.ok) {
     throw new Error("Could not clean up local checkout concurrency fixtures.");
   }
@@ -140,7 +155,8 @@ try {
     )
     values
       ('${trackedProductId}', '${prefix} tracked fixture', 'testing', 1.00, 50, true, true),
-      ('${untrackedProductId}', '${prefix} untracked fixture', 'testing', 1.00, null, true, true);`);
+      ('${untrackedProductId}', '${prefix} untracked fixture', 'testing', 1.00, null, true, true),
+      ('${limitedProductId}', '${prefix} limited fixture', 'testing', 1.00, 1, true, true);`);
 
   const checkoutResults = await concurrentResults(checkoutIdentity, 5, true);
   if (checkoutResults.some((result) => !result.ok)) {
@@ -185,11 +201,54 @@ try {
     );
   }
 
+  const competingResults = await Promise.all(
+    competingCheckoutKeys.map((key, index) =>
+      runSql(rateLimitCall(
+        competingIdentities[index],
+        true,
+        key,
+        JSON.stringify([{ id: limitedProductId, quantity: 1 }]),
+      ))
+    ),
+  );
+  const successfulCheckouts = competingResults.filter((result) => result.ok);
+  const rejectedCheckouts = competingResults.filter((result) =>
+    !result.ok && result.errorCode === "P0002"
+  );
+  if (successfulCheckouts.length !== 1 || rejectedCheckouts.length !== 1) {
+    throw new Error(
+      "Concurrent distinct checkouts did not reject the request that exceeded tracked stock.",
+    );
+  }
+
+  await callOrFail(`do $test$
+    declare
+      v_order_id uuid;
+    begin
+      select id into v_order_id
+      from public.orders
+      where checkout_idempotency_key in ('${competingCheckoutKeys[0]}', '${competingCheckoutKeys[1]}');
+
+      if v_order_id is null
+         or (select count(*) from public.orders
+             where checkout_idempotency_key in ('${competingCheckoutKeys[0]}', '${competingCheckoutKeys[1]}')) <> 1
+         or (select stock_quantity from public.products where id = '${limitedProductId}') <> 0
+         or (select count(*) from public.order_inventory_reservations
+             where order_id = v_order_id and product_id = '${limitedProductId}'
+               and quantity = 1 and status = 'reserved') <> 1 then
+        raise exception 'Distinct concurrent checkouts oversold tracked inventory';
+      end if;
+    end;
+    $test$;`);
+
   console.log(
     "Passed: five concurrent identical checkouts created one order and reserved stock once.",
   );
   console.log(
     "Passed: concurrent requests at the rate-limit boundary allowed only the remaining request.",
+  );
+  console.log(
+    "Passed: distinct concurrent checkouts competing for one tracked unit did not oversell.",
   );
 } catch (error) {
   console.error(

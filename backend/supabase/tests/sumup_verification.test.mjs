@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   parseVerifiedCheckout,
+  retrieveCheckout,
   SumUpError,
 } from "../functions/_shared/sumup.ts";
 
@@ -138,4 +139,45 @@ test("rejects checkout identity, merchant, amount, and currency mismatches", asy
 test("rejects malformed provider checkout data", () => {
   assert.throws(() => parseVerifiedCheckout(null, expected), SumUpError);
   assert.throws(() => parseVerifiedCheckout({}, expected), SumUpError);
+});
+
+test("logs only the SumUp status and path for failed API responses", async () => {
+  const previousFetch = globalThis.fetch;
+  const previousConsoleError = console.error;
+  const logged = [];
+  let requestInit;
+
+  globalThis.fetch = async (_url, init) => {
+    requestInit = init;
+    return new Response("sensitive provider response", { status: 503 });
+  };
+  console.error = (...args) => logged.push(args);
+
+  try {
+    await assert.rejects(
+      retrieveCheckout(
+        "checkout-123",
+        expected,
+        { apiKey: "sumup-secret-test-key", merchantCode: "MERCHANT123" },
+      ),
+      (error) => error instanceof SumUpError && error.statusCode === 503,
+    );
+
+    assert.deepEqual(logged, [[
+      "SumUp API request failed",
+      { status: 503, path: "/v0.1/checkouts/checkout-123" },
+    ]]);
+    assert.equal(
+      JSON.stringify(logged).includes("sumup-secret-test-key"),
+      false,
+    );
+    assert.equal(
+      JSON.stringify(logged).includes(requestInit.headers.authorization),
+      false,
+    );
+    assert.equal(JSON.stringify(logged).includes("sensitive provider response"), false);
+  } finally {
+    globalThis.fetch = previousFetch;
+    console.error = previousConsoleError;
+  }
 });

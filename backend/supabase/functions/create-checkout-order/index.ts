@@ -1,7 +1,6 @@
 import {
   callRpc,
   createHostedCheckout,
-  ExpectedCheckout,
   findCheckoutByReference,
   getSumUpConfig,
   getSumUpRedirectUrl,
@@ -11,9 +10,13 @@ import {
   persistVerification,
   RpcError,
   SumUpError,
-  VerifiedCheckout,
 } from "../_shared/sumup.ts";
-import { trustedClientNetwork } from "../_shared/trusted-network.ts";
+import type { ExpectedCheckout, VerifiedCheckout } from "../_shared/sumup.ts";
+import {
+  consumeCheckoutRequestLimit,
+  createCheckoutRateLimitIdentity,
+  normalizeCheckoutPhone,
+} from "../_shared/checkout-rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -105,32 +108,6 @@ function validateRequest(value: unknown): CheckoutRequest | null {
 
 function safeError(status: number, message: string) {
   return jsonResponse(status, { error: message });
-}
-
-async function rateLimitIdentity(
-  network: string,
-  keyMaterial: string,
-): Promise<string> {
-  const keyBytes = new TextEncoder().encode(keyMaterial);
-  if (keyBytes.byteLength < 32) {
-    throw new Error("Rate-limit identity key is not configured");
-  }
-  const key = await crypto.subtle.importKey(
-    "raw",
-    keyBytes,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(network),
-  );
-  return Array.from(
-    new Uint8Array(signature),
-    (byte) => byte.toString(16).padStart(2, "0"),
-  ).join("");
 }
 
 type CheckoutClaim = {
@@ -232,67 +209,13 @@ Deno.serve(async (request: Request) => {
     return safeError(405, "Use POST to start checkout.");
   }
 
-  const network = trustedClientNetwork(request);
   const hmacKey = Deno.env.get("CHECKOUT_RATE_LIMIT_HMAC_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const sumup = getSumUpConfig();
   const redirectUrl = getSumUpRedirectUrl();
-  if (
-    !network || !hmacKey || !supabaseUrl || !serviceRoleKey || !sumup ||
-    !redirectUrl
-  ) {
+  if (!hmacKey || !supabaseUrl || !serviceRoleKey || !sumup || !redirectUrl) {
     return safeError(503, "Checkout is temporarily unavailable.");
-  }
-
-  let identityHash: string;
-  try {
-    identityHash = await rateLimitIdentity(network, hmacKey);
-  } catch {
-    return safeError(503, "Checkout is temporarily unavailable.");
-  }
-
-  let rateLimitResponse: Response;
-  try {
-    rateLimitResponse = await fetch(
-      `${
-        supabaseUrl.replace(/\/+$/, "")
-      }/rest/v1/rpc/consume_checkout_request_limit`,
-      {
-        method: "POST",
-        headers: {
-          apikey: serviceRoleKey,
-          authorization: `Bearer ${serviceRoleKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ p_identity_hash: `\\x${identityHash}` }),
-      },
-    );
-  } catch {
-    return safeError(
-      503,
-      "Checkout is temporarily unavailable. Please try again.",
-    );
-  }
-
-  if (!rateLimitResponse.ok) {
-    return safeError(503, "Checkout is temporarily unavailable.");
-  }
-
-  let rateLimitAllowed: unknown;
-  try {
-    rateLimitAllowed = await rateLimitResponse.json();
-  } catch {
-    return safeError(503, "Checkout is temporarily unavailable.");
-  }
-  if (typeof rateLimitAllowed !== "boolean") {
-    return safeError(503, "Checkout is temporarily unavailable.");
-  }
-  if (!rateLimitAllowed) {
-    return safeError(
-      429,
-      "Too many checkout attempts. Please wait and try again.",
-    );
   }
 
   const contentType = request.headers.get("content-type") || "";
@@ -326,6 +249,30 @@ Deno.serve(async (request: Request) => {
   if (!checkout) {
     return safeError(400, "Enter valid customer, delivery, and cart details.");
   }
+  const normalizedPhone = normalizeCheckoutPhone(
+    checkout.customerPhone,
+    checkout.countryCode,
+  );
+  if (!normalizedPhone) {
+    return safeError(400, "Enter valid customer, delivery, and cart details.");
+  }
+
+  try {
+    const identityHash = await createCheckoutRateLimitIdentity(
+      "checkout-phone",
+      normalizedPhone,
+      hmacKey,
+    );
+    if (!await consumeCheckoutRequestLimit(identityHash)) {
+      return safeError(
+        429,
+        "Too many checkout attempts. Please wait and try again.",
+      );
+    }
+  } catch {
+    return safeError(503, "Checkout is temporarily unavailable.");
+  }
+
   const accessTokenHash = await hashCheckoutAccessToken(
     checkout.checkoutAccessToken,
   );

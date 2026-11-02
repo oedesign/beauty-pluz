@@ -172,7 +172,13 @@ async function sumUpRequest(
   } catch {
     throw new SumUpError();
   }
-  if (!response.ok) throw new SumUpError(response.status);
+  if (!response.ok) {
+    console.error("SumUp API request failed", {
+      status: response.status,
+      path,
+    });
+    throw new SumUpError(response.status);
+  }
   try {
     return await response.json();
   } catch {
