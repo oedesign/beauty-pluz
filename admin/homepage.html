@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Homepage Content — Beauty Pluz Admin</title>
+  <link rel="icon" type="image/webp" href="../images/beautypluz-logo.webp" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body admin-body--dashboard">
+  <p class="admin-status admin-status--gate" data-admin-status role="status" aria-live="polite">Verifying administrator access…</p>
+
+  <div class="admin-layout" data-admin-app hidden>
+    <aside class="admin-sidebar">
+      <a class="admin-brand admin-brand--sidebar" href="../index.html">
+        <img src="../images/beautypluz-logo.webp" alt="" />
+        <span>Beauty Pluz</span>
+      </a>
+      <p class="admin-sidebar__label">Administration</p>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <a href="/admin/index.html">Overview</a>
+        <a href="/admin/products.html">Products</a>
+        <a href="/admin/inventory.html">Inventory</a>
+        <a href="/admin/orders.html">Orders</a>
+        <a class="is-current" href="/admin/homepage.html" aria-current="page">Homepage</a>
+        <a href="/admin/settings.html">Store settings</a>
+      </nav>
+      <a class="admin-back-link admin-back-link--sidebar" href="../index.html">← View storefront</a>
+    </aside>
+
+    <main class="admin-main admin-homepage">
+      <header class="admin-topbar">
+        <div>
+          <p class="admin-eyebrow">Storefront content</p>
+          <h1>Homepage</h1>
+        </div>
+        <div class="admin-account">
+          <span data-admin-email></span>
+          <button class="admin-button admin-button--quiet" type="button" data-admin-logout>Sign out</button>
+        </div>
+      </header>
+
+      <div class="homepage-publish-bar">
+        <span data-homepage-publish-state>Loading saved content…</span>
+        <div>
+          <button class="admin-button admin-button--quiet" type="button" data-homepage-preview>Preview draft</button>
+          <button class="admin-button admin-button--quiet" type="button" data-homepage-save>Save draft</button>
+          <button class="admin-button" type="button" data-homepage-publish>Publish changes</button>
+        </div>
+      </div>
+      <p class="admin-status" data-homepage-status role="status" aria-live="polite" hidden></p>
+
+      <section class="homepage-panel" aria-labelledby="announcement-heading">
+        <div class="homepage-panel__heading">
+          <div>
+            <p class="admin-eyebrow">Top of storefront</p>
+            <h2 id="announcement-heading">Announcement bar</h2>
+          </div>
+          <label class="product-form__check">
+            <input type="checkbox" data-announcement-enabled />
+            <span>Show announcement</span>
+          </label>
+        </div>
+        <label class="product-form__field">
+          <span>Announcement text</span>
+          <input type="text" maxlength="180" data-announcement-copy placeholder="Free shipping on orders over £75" />
+        </label>
+      </section>
+
+      <section class="homepage-panel" aria-labelledby="hero-content-heading">
+        <div class="homepage-panel__heading">
+          <div>
+            <p class="admin-eyebrow">Homepage hero</p>
+            <h2 id="hero-content-heading">Carousel slides</h2>
+            <p class="homepage-panel__hint">Drag controls are avoided intentionally; use the up/down buttons to set each slide’s display order.</p>
+          </div>
+          <button class="admin-button" type="button" data-slide-add>Add slide</button>
+        </div>
+        <div class="homepage-card-list" data-slide-list></div>
+      </section>
+
+      <section class="homepage-panel" aria-labelledby="featured-heading">
+        <div class="homepage-panel__heading">
+          <div>
+            <p class="admin-eyebrow">Curated collection</p>
+            <h2 id="featured-heading">Featured products</h2>
+            <p class="homepage-panel__hint">Choose existing products and set their homepage order. Products remain the same catalogue records used by the shop.</p>
+          </div>
+        </div>
+        <div class="homepage-featured-list" data-featured-list></div>
+      </section>
+
+      <section class="homepage-panel" aria-labelledby="promotions-heading">
+        <div class="homepage-panel__heading">
+          <div>
+            <p class="admin-eyebrow">Campaigns</p>
+            <h2 id="promotions-heading">Promotional banners</h2>
+          </div>
+          <button class="admin-button" type="button" data-promotion-add>Add banner</button>
+        </div>
+        <div class="homepage-card-list" data-promotion-list></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="homepage-preview-dialog" data-homepage-preview-dialog aria-labelledby="homepage-preview-title">
+    <header class="homepage-preview-dialog__header">
+      <div>
+        <p class="admin-eyebrow">Not published</p>
+        <h2 id="homepage-preview-title">Homepage draft preview</h2>
+      </div>
+      <button class="product-dialog__close" type="button" data-preview-close aria-label="Close preview">×</button>
+    </header>
+    <div class="homepage-preview" data-homepage-preview-content></div>
+  </dialog>
+
+  <script src="../js/backend-config.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="homepage.js"></script>
+</body>
+</html>

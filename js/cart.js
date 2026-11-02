@@ -2,15 +2,26 @@
    BEAUTY PLUZ — CART.JS
    Shopping cart state, persisted to localStorage so it
    survives across index/shop/cart/contact page loads.
-   This is the data/foundation layer only — cart.html markup
-   and rendering templates will consume the Cart API once the
-   page sections are built.
+   Cart state, cart-page rendering, WhatsApp ordering, and
+   SumUp checkout integration.
    ========================================================= */
 
 (function () {
   "use strict";
 
   const STORAGE_KEY = "beautyPluzCart";
+  const CHECKOUT_ATTEMPT_STORAGE_KEY = "beautyPluzSumUpCheckoutAttempt";
+  const DELIVERY_FEE = 4.60;
+  const checkoutIdPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const checkoutTokenPattern = /^[A-Za-z0-9_-]{43}$/;
+  let checkoutSubmitting = false;
+
+  function currentPrice(product) {
+    return product.sale_price === null || product.sale_price === undefined
+      ? product.price
+      : product.sale_price;
+  }
 
   /**
    * Cart item shape:
@@ -25,9 +36,24 @@
         const items = raw ? JSON.parse(raw) : [];
         // Product ids are authoritative: refresh persisted cart display data
         // from the local catalogue so old/stale image URLs cannot be mixed in.
-        return Array.isArray(items) ? items.map((item) => {
+        return Array.isArray(items) ? items.flatMap((item) => {
           const product = window.BeautyPluzProducts?.getById(item.id);
-          return product ? { ...item, name: product.name, price: product.price, image: product.image, icon: product.icon, category: product.category } : item;
+          if (!product || !product.is_available || product.stock_quantity === 0) return [];
+          const quantity = product.stock_quantity === null
+            ? item.quantity
+            : Math.min(item.quantity, product.stock_quantity);
+          return quantity > 0 ? [{
+            ...item,
+            quantity,
+            name: product.name,
+            price: currentPrice(product),
+            image: product.image,
+            icon: product.icon,
+            category: product.category,
+            sale_price: product.sale_price,
+            is_available: product.is_available,
+            stock_quantity: product.stock_quantity,
+          }] : [];
         }) : [];
       } catch (err) {
         console.error("Beauty Pluz: could not read cart from storage", err);
@@ -45,21 +71,28 @@
     },
 
     addItem(product, quantity) {
-      const qty = quantity && quantity > 0 ? quantity : 1;
+      if (!product.is_available || product.stock_quantity === 0) return this.getItems();
+      const requestedQty = quantity && quantity > 0 ? quantity : 1;
       const items = this.getItems();
       const existing = items.find((item) => item.id === product.id);
+      const currentQuantity = existing ? existing.quantity : 0;
+      const availableQty = product.stock_quantity === null
+        ? requestedQty
+        : Math.min(requestedQty, Math.max(product.stock_quantity - currentQuantity, 0));
+      if (availableQty === 0) return items;
 
       if (existing) {
-        existing.quantity += qty;
+        existing.quantity += availableQty;
       } else {
         items.push({
           id: product.id,
           name: product.name,
-          price: product.price,
+          price: currentPrice(product),
+          sale_price: product.sale_price,
           image: product.image || "",
           icon: product.icon || "",
           category: product.category || "",
-          quantity: qty,
+          quantity: availableQty,
         });
       }
 
@@ -73,7 +106,13 @@
         items = items.filter((item) => item.id !== id);
       } else {
         const target = items.find((item) => item.id === id);
-        if (target) target.quantity = quantity;
+        const product = window.BeautyPluzProducts?.getById(id);
+        if (target) {
+          target.quantity = product?.stock_quantity === null || product?.stock_quantity === undefined
+            ? quantity
+            : Math.min(quantity, product.stock_quantity);
+          if (target.quantity === 0) items = items.filter((item) => item.id !== id);
+        }
       }
       this._save(items);
       return items;
@@ -143,7 +182,12 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", refreshCartBadge);
+  document.addEventListener("DOMContentLoaded", () => {
+    refreshCartBadge();
+    window.BeautyPluzProducts?.ready
+      .then(refreshCartBadge)
+      .catch((err) => console.error("Beauty Pluz: cart badge could not refresh from the catalogue", err));
+  });
   Cart.onChange(refreshCartBadge);
 
   /* =========================================================
@@ -155,7 +199,6 @@
      ========================================================= */
 
   const WHATSAPP_NUMBER = "10000000000"; // same number used in the header/footer WhatsApp links
-  const DELIVERY_ESTIMATE = "2–4 business days";
 
   /** Builds the inline SVG markup for a cart row's product icon,
       reusing the single icon set defined in products.js. */
@@ -173,6 +216,7 @@
   function renderSummary(items) {
     const totals = document.querySelector("[data-cart-summary-totals]");
     const whatsappBtn = document.querySelector("[data-order-whatsapp]");
+    const checkoutBtn = document.querySelector("[data-checkout-sumup]");
     if (!totals) return;
 
     const subtotal = Cart.getSubtotal();
@@ -188,16 +232,20 @@
         <span>${money(subtotal)}</span>
       </div>
       <div class="cart-summary__row">
-        <span>Estimated Delivery</span>
-        <span>${items.length === 0 ? "—" : DELIVERY_ESTIMATE}</span>
+        <span>Delivery</span>
+        <span>${items.length === 0 ? "—" : money(DELIVERY_FEE)}</span>
       </div>
       <div class="cart-summary__row cart-summary__row--total">
-        <span>Grand Total</span>
-        <span>${money(subtotal)}</span>
+        <span>Estimated Total</span>
+        <span>${items.length === 0 ? "—" : money(subtotal + DELIVERY_FEE)}</span>
       </div>
     `;
 
     if (whatsappBtn) whatsappBtn.disabled = items.length === 0;
+    if (checkoutBtn) {
+      checkoutBtn.disabled = items.length === 0 || checkoutSubmitting;
+      checkoutBtn.setAttribute("aria-busy", String(checkoutSubmitting));
+    }
   }
 
   /** Builds the plain-text WhatsApp order message from cart items + customer details. */
@@ -247,6 +295,7 @@
           errorEl.textContent = "Please fill in your name, phone number, and delivery address.";
           errorEl.hidden = false;
         }
+
         const firstEmpty = !customer.name ? nameInput : !customer.phone ? phoneInput : addressInput;
         firstEmpty?.focus();
         return;
@@ -255,13 +304,428 @@
       if (errorEl) errorEl.hidden = true;
 
       const message = buildWhatsAppMessage(items, customer);
-      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+      const recipient = String(window.BEAUTY_PLUZ_WHATSAPP_NUMBER || WHATSAPP_NUMBER).replace(/\D/g, "");
+      const url = `https://wa.me/${recipient}?text=${encodeURIComponent(message)}`;
       window.open(url, "_blank", "noopener,noreferrer");
     });
 
     // Clear the error as soon as the person starts fixing the form
     [nameInput, phoneInput, addressInput].forEach((input) => {
       input?.addEventListener("input", () => {
+        if (errorEl && !errorEl.hidden) errorEl.hidden = true;
+      });
+    });
+  }
+
+  function showCheckoutMessage(errorEl, message) {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
+
+  function setCheckoutLoading(button, loading) {
+    const label = button.querySelector("[data-checkout-label]");
+    if (label) {
+      label.textContent = loading
+        ? "Preparing secure checkout…"
+        : "Pay securely with SumUp";
+    }
+    button.disabled = loading || Cart.getItems().length === 0;
+    button.setAttribute("aria-busy", String(loading));
+  }
+
+  function normalizedCheckoutItems(items) {
+    if (!Array.isArray(items) || items.length < 1 || items.length > 50) {
+      return null;
+    }
+    const checkoutItems = [];
+    for (const item of items) {
+      if (
+        typeof item.id !== "string" ||
+        item.id.length < 1 ||
+        item.id.length > 80 ||
+        item.id.trim() !== item.id ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity < 1 ||
+        item.quantity > 99
+      ) {
+        return null;
+      }
+      checkoutItems.push({ id: item.id, quantity: item.quantity });
+    }
+    return checkoutItems.sort((left, right) => left.id.localeCompare(right.id));
+  }
+
+  function validateCheckoutDetails(fields) {
+    const name = (fields.name?.value || "").trim();
+    const phone = (fields.phone?.value || "").trim();
+    const address = (fields.address?.value || "").trim();
+    const countryCode = (fields.countryCode?.value || "").trim().toUpperCase();
+    const postalCode = (fields.postalCode?.value || "")
+      .trim()
+      .replace(/[\s-]+/g, "")
+      .toUpperCase();
+
+    if (!name || name.length > 120 || /[\u0000-\u001f\u007f]/.test(name)) {
+      return { field: fields.name, message: "Enter your name (up to 120 characters)." };
+    }
+    if (
+      phone.length < 5 ||
+      phone.length > 40 ||
+      !/^[+0-9() .-]+$/.test(phone) ||
+      phone.replace(/[^0-9]/g, "").length < 5 ||
+      phone.replace(/[^0-9]/g, "").length > 15
+    ) {
+      return { field: fields.phone, message: "Enter a valid phone number." };
+    }
+    if (
+      address.length < 5 ||
+      address.length > 500 ||
+      /[\u0000-\u001f\u007f]/.test(address)
+    ) {
+      return { field: fields.address, message: "Enter a valid delivery address (5–500 characters)." };
+    }
+    if (!/^[A-Z]{2}$/.test(countryCode)) {
+      return { field: fields.countryCode, message: "Enter a two-letter country code, such as GB." };
+    }
+    if (!/^[A-Z0-9]{2,12}$/.test(postalCode)) {
+      return { field: fields.postalCode, message: "Enter a valid postal code." };
+    }
+
+    return {
+      customerName: name,
+      customerPhone: phone,
+      shippingAddress: address,
+      countryCode,
+      postalCode,
+    };
+  }
+
+  function randomCheckoutAccessToken() {
+    const bytes = new Uint8Array(32);
+    window.crypto.getRandomValues(bytes);
+    let binary = "";
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+    return window.btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+  }
+
+  function randomCheckoutIdempotencyKey() {
+    if (typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+
+  async function checkoutRequestFingerprint(request) {
+    const canonicalRequest = {
+      customerName: request.customerName,
+      customerPhone: request.customerPhone,
+      shippingAddress: request.shippingAddress,
+      countryCode: request.countryCode,
+      postalCode: request.postalCode,
+      items: request.items,
+    };
+    const digest = await window.crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(JSON.stringify(canonicalRequest)),
+    );
+    return Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0")
+    ).join("");
+  }
+
+  async function getCheckoutAttempt(fingerprint) {
+    let stored;
+    try {
+      const raw = window.sessionStorage.getItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
+      stored = raw ? JSON.parse(raw) : null;
+    } catch {
+      throw new Error("Secure checkout could not be saved in this browser. Please enable session storage and try again.");
+    }
+
+    if (
+      stored &&
+      stored.fingerprint === fingerprint &&
+      checkoutIdPattern.test(stored.idempotencyKey) &&
+      checkoutTokenPattern.test(stored.checkoutAccessToken) &&
+      stored.paymentStatus !== "paid" &&
+      !["failed", "cancelled", "expired"].includes(stored.paymentStatus)
+    ) {
+      return stored;
+    }
+    if (
+      stored?.fingerprint === fingerprint &&
+      stored.paymentStatus === "paid"
+    ) {
+      throw new Error("This cart's checkout is already marked as paid. Please contact us before starting another payment.");
+    }
+
+    const attempt = {
+      fingerprint,
+      idempotencyKey: randomCheckoutIdempotencyKey(),
+      checkoutAccessToken: randomCheckoutAccessToken(),
+      items: [],
+    };
+    try {
+      window.sessionStorage.setItem(
+        CHECKOUT_ATTEMPT_STORAGE_KEY,
+        JSON.stringify(attempt),
+      );
+    } catch {
+      throw new Error("Secure checkout could not be saved in this browser. Please enable session storage and try again.");
+    }
+    return attempt;
+  }
+
+  function updateCheckoutAttempt(attempt, updates) {
+    try {
+      const current = JSON.parse(
+        window.sessionStorage.getItem(CHECKOUT_ATTEMPT_STORAGE_KEY) || "null",
+      );
+      if (
+        !current ||
+        current.fingerprint !== attempt.fingerprint ||
+        current.idempotencyKey !== attempt.idempotencyKey
+      ) {
+        throw new Error("Checkout context changed.");
+      }
+      window.sessionStorage.setItem(
+        CHECKOUT_ATTEMPT_STORAGE_KEY,
+        JSON.stringify({ ...current, ...updates }),
+      );
+    } catch {
+      throw new Error("Checkout details could not be retained in this browser. Your cart is unchanged; please retry.");
+    }
+  }
+
+  function clearExpiredCheckoutAttempt(fingerprint) {
+    try {
+      const raw = window.sessionStorage.getItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
+      const stored = raw ? JSON.parse(raw) : null;
+      if (stored?.fingerprint !== fingerprint) return false;
+      window.sessionStorage.removeItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function getCheckoutEndpoint() {
+    const config = window.BEAUTY_PLUZ_BACKEND_CONFIG;
+    if (
+      !config ||
+      typeof config.supabaseUrl !== "string" ||
+      typeof config.supabaseAnonKey !== "string" ||
+      !config.supabaseAnonKey
+    ) {
+      throw new Error("Secure checkout is not configured. Please contact us for help.");
+    }
+    let backendUrl;
+    try {
+      backendUrl = new URL(config.supabaseUrl);
+    } catch {
+      throw new Error("Secure checkout is not configured. Please contact us for help.");
+    }
+    if (
+      backendUrl.protocol !== "https:" ||
+      backendUrl.username ||
+      backendUrl.password ||
+      backendUrl.search ||
+      backendUrl.hash
+    ) {
+      throw new Error("Secure checkout is not configured. Please contact us for help.");
+    }
+    return {
+      url: new URL("/functions/v1/create-checkout-order", backendUrl.origin).href,
+      anonKey: config.supabaseAnonKey,
+    };
+  }
+
+  function trustedHostedCheckoutUrl(value) {
+    if (typeof value !== "string") return null;
+    try {
+      const url = new URL(value);
+      if (
+        url.protocol !== "https:" ||
+        url.hostname !== "checkout.sumup.com" ||
+        url.port ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash ||
+        !/^\/pay\/[A-Za-z0-9-]+$/.test(url.pathname)
+      ) {
+        return null;
+      }
+      return url.href;
+    } catch {
+      return null;
+    }
+  }
+
+  function initSumUpCheckout() {
+    const button = document.querySelector("[data-checkout-sumup]");
+    const errorEl = document.querySelector("[data-delivery-error]");
+    if (!button) return;
+
+    const fields = {
+      name: document.querySelector("#customer-name"),
+      phone: document.querySelector("#customer-phone"),
+      address: document.querySelector("#customer-address"),
+      countryCode: document.querySelector("#customer-country"),
+      postalCode: document.querySelector("#customer-postal-code"),
+    };
+
+    button.addEventListener("click", async () => {
+      if (checkoutSubmitting) return;
+      const cartItems = normalizedCheckoutItems(Cart.getItems());
+      if (!cartItems) {
+        showCheckoutMessage(errorEl, "Your cart is empty or contains too many items. Please review it and try again.");
+        return;
+      }
+
+      const details = validateCheckoutDetails(fields);
+      if (details.field) {
+        showCheckoutMessage(errorEl, details.message);
+        details.field?.focus();
+        return;
+      }
+      if (errorEl) errorEl.hidden = true;
+
+      checkoutSubmitting = true;
+      setCheckoutLoading(button, true);
+      let redirecting = false;
+      try {
+        const request = {
+          ...details,
+          items: cartItems,
+        };
+        const fingerprint = await checkoutRequestFingerprint(request);
+        const attempt = await getCheckoutAttempt(fingerprint);
+        updateCheckoutAttempt(attempt, { items: cartItems });
+        const endpoint = getCheckoutEndpoint();
+        let response;
+        try {
+          response = await fetch(endpoint.url, {
+            method: "POST",
+            headers: {
+              apikey: endpoint.anonKey,
+              Authorization: `Bearer ${endpoint.anonKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...request,
+              idempotencyKey: attempt.idempotencyKey,
+              checkoutAccessToken: attempt.checkoutAccessToken,
+            }),
+          });
+        } catch {
+          showCheckoutMessage(errorEl, "We couldn't reach secure checkout. Your cart is unchanged; please try again.");
+          return;
+        }
+
+        let result;
+        try {
+          result = await response.json();
+        } catch {
+          showCheckoutMessage(errorEl, "Secure checkout returned an unexpected response. Your cart is unchanged; please try again.");
+          return;
+        }
+
+        if (response.status === 202) {
+          if (typeof result?.orderId === "string" && checkoutIdPattern.test(result.orderId)) {
+            updateCheckoutAttempt(attempt, {
+              orderId: result.orderId,
+              paymentStatus: "pending",
+            });
+          }
+          showCheckoutMessage(errorEl, "Your checkout is still being prepared. Please wait a moment and try again; your cart is unchanged.");
+          return;
+        }
+        if (!response.ok) {
+          let message = typeof result?.error === "string" && result.error.trim()
+            ? result.error.slice(0, 300)
+            : "We couldn't create your checkout. Your cart is unchanged; please try again.";
+          if (
+            response.status === 409 &&
+            typeof result?.error === "string" &&
+            /checkout request cannot be reused|checkout is no longer available/i.test(result.error)
+          ) {
+            message = "We couldn't resume this checkout. Your cart is unchanged. If you may already have paid, contact us before trying again.";
+          }
+          showCheckoutMessage(errorEl, message);
+          return;
+        }
+        if (
+          response.status !== 201 ||
+          typeof result?.orderId !== "string" ||
+          !checkoutIdPattern.test(result.orderId) ||
+          !["pending", "paid", "failed", "cancelled", "expired"].includes(result.paymentStatus)
+        ) {
+          showCheckoutMessage(errorEl, "Secure checkout returned an unexpected response. Your cart is unchanged; please try again.");
+          return;
+        }
+        updateCheckoutAttempt(attempt, {
+          orderId: result.orderId,
+          paymentStatus: result.paymentStatus,
+          items: cartItems,
+        });
+
+        if (result.paymentStatus !== "pending") {
+          if (result.paymentStatus === "expired") {
+            const cleared = clearExpiredCheckoutAttempt(fingerprint);
+            showCheckoutMessage(
+              errorEl,
+              cleared
+                ? "This checkout has expired. You can start a new checkout."
+                : "This checkout has expired. Please contact us before trying again.",
+            );
+            return;
+          }
+          const messages = {
+            paid: "This order is already marked as paid. Please contact us before starting another payment.",
+            failed: "This payment attempt was declined. Please contact us before retrying.",
+            cancelled: "This checkout is no longer active. Please contact us for help.",
+          };
+          showCheckoutMessage(errorEl, messages[result.paymentStatus]);
+          return;
+        }
+
+        const checkoutUrl = trustedHostedCheckoutUrl(result.hostedCheckoutUrl);
+        if (!checkoutUrl) {
+          showCheckoutMessage(errorEl, "We couldn't verify the secure payment page. Your cart is unchanged; please try again.");
+          return;
+        }
+
+        redirecting = true;
+        window.location.assign(checkoutUrl);
+      } catch (error) {
+        showCheckoutMessage(
+          errorEl,
+          error instanceof Error
+            ? error.message
+            : "Secure checkout is temporarily unavailable. Your cart is unchanged; please try again.",
+        );
+      } finally {
+        if (!redirecting) {
+          checkoutSubmitting = false;
+          setCheckoutLoading(button, false);
+        }
+      }
+    });
+
+    Object.values(fields).forEach((field) => {
+      field?.addEventListener("input", () => {
         if (errorEl && !errorEl.hidden) errorEl.hidden = true;
       });
     });
@@ -353,9 +817,19 @@
 
   function initCartPage() {
     if (!document.querySelector("[data-cart-list]")) return;
-    renderCartPage();
-    Cart.onChange(renderCartPage);
-    initWhatsAppOrder();
+    Promise.resolve(window.BeautyPluzProducts?.ready)
+      .then(() => {
+        renderCartPage();
+        refreshCartBadge();
+        Cart.onChange(renderCartPage);
+        initWhatsAppOrder();
+        initSumUpCheckout();
+      })
+      .catch((err) => {
+        console.error("Beauty Pluz: could not load product information for the cart", err);
+        const list = document.querySelector("[data-cart-list]");
+        if (list) list.textContent = "We could not load your cart right now. Please refresh the page or try again later.";
+      });
   }
 
   document.addEventListener("DOMContentLoaded", initCartPage);

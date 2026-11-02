@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin Sign In — Beauty Pluz</title>
+  <link rel="icon" type="image/webp" href="../images/beautypluz-logo.webp" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body">
+  <main class="admin-auth">
+    <a class="admin-brand" href="../index.html" aria-label="Beauty Pluz home">
+      <img src="../images/beautypluz-logo.webp" alt="" />
+      <span>Beauty Pluz</span>
+    </a>
+
+    <section class="admin-auth__card" aria-labelledby="admin-login-title">
+      <p class="admin-eyebrow">Store management</p>
+      <h1 id="admin-login-title">Welcome back</h1>
+      <p class="admin-auth__intro">Sign in with your authorized administrator account.</p>
+
+      <p class="admin-status" data-admin-status role="status" aria-live="polite" hidden></p>
+
+      <form class="admin-form" data-admin-login>
+        <label for="admin-email">Email address</label>
+        <input id="admin-email" name="email" type="email" autocomplete="username" required />
+
+        <label for="admin-password">Password</label>
+        <input id="admin-password" name="password" type="password" autocomplete="current-password" required />
+
+        <button class="admin-button" type="submit" data-admin-submit>Sign in securely</button>
+      </form>
+
+      <p class="admin-auth__footnote">Administrator accounts are provisioned by the store owner. Public registration is disabled.</p>
+    </section>
+
+    <a class="admin-back-link" href="../index.html">← Return to the store</a>
+  </main>
+  <script src="../js/backend-config.js"></script>
+  <script type="module" src="auth.js"></script>
+</body>
+</html>
