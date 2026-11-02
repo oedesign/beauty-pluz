@@ -1,0 +1,72 @@
+
+name: Reconcile SumUp checkouts
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: reconcile-sumup-checkouts
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Invoke the reconciliation function
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          RECONCILIATION_API_KEY: ${{ secrets.RECONCILIATION_API_KEY }}
+        run: |
+          node --input-type=module <<'NODE'
+          const projectUrl = process.env.SUPABASE_URL;
+          const reconciliationKey = process.env.RECONCILIATION_API_KEY;
+          if (
+            !projectUrl ||
+            !process.env.SUPABASE_PUBLISHABLE_KEY ||
+            !process.env.SUPABASE_PUBLISHABLE_KEY.startsWith(
+              "sb_publishable_",
+            ) ||
+            !reconciliationKey ||
+            !/^[0-9a-fA-F]{64}$/.test(reconciliationKey)
+          ) {
+            throw new Error("Reconciliation workflow configuration is missing.");
+          }
+
+          let endpoint;
+          try {
+            endpoint = new URL(
+              "/functions/v1/reconcile-sumup-checkouts",
+              projectUrl,
+            );
+          } catch {
+            throw new Error("Reconciliation project URL is invalid.");
+          }
+          if (
+            endpoint.protocol !== "https:" ||
+            !endpoint.hostname.endsWith(".supabase.co")
+          ) {
+            throw new Error("Reconciliation requires an HTTPS project URL.");
+          }
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              apikey: process.env.SUPABASE_PUBLISHABLE_KEY,
+              "x-reconciliation-key": reconciliationKey,
+              "content-type": "application/json",
+            },
+            body: "{}",
+          });
+          if (!response.ok) {
+            throw new Error(
+              `Reconciliation request failed with HTTP ${response.status}.`,
+            );
+          }
+          NODE
